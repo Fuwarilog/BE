@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 public class AuthResponse {
     @Getter
     @Setter
@@ -14,6 +16,7 @@ public class AuthResponse {
         long userId;
         String name;
         String email;
+        String provider;
         String password;
     }
 }
