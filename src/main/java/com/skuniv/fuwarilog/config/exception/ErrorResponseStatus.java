@@ -15,8 +15,8 @@ public enum ErrorResponseStatus {
 
     SECRET_FILE_NOT_FOUND(4001, "파일을 찾을 수 없습니다."),
     INVALID_SECRET_FILE(4002, "잘못된 파일입니다."),
-    FCM_TOKEN_NOT_FOUND(4003, "FCM토큰을 찾지 못했습니다."),
-    USER_NOT_FOUND(4004, "사용자를 찾을 수 없습니다.");
+    USER_NOT_FOUND(4003, "사용자를 찾을 수 없습니다."),
+    INVALID_TOKEN(4004, "잘못된 토큰입니다.");
 
     private final int code;
     private final String message;

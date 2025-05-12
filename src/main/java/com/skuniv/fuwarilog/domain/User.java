@@ -28,6 +28,9 @@ public class User extends BaseEntity {
     @Column(name="password")
     private String password;
 
+    @Column(name="refresh_token")
+    private String refreshToken;
+
     @Column(name="name", columnDefinition = "VARCHAR(64)")
     private String name;
 
