@@ -34,6 +34,9 @@ public class User extends BaseEntity {
     @Column(name="name", columnDefinition = "VARCHAR(64)")
     private String name;
 
+    @Column(name="provider", columnDefinition = "VARCHAR(64)")
+    private String provider;
+
     @Column(name="pricture_url")
     private String pictureUrl;
 

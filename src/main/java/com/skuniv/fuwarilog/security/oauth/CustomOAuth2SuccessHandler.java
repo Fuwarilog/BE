@@ -1,5 +1,6 @@
 package com.skuniv.fuwarilog.security.oauth;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -13,22 +14,26 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
+public class CustomOAuth2SuccessHandler  extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        String userEmail = oAuth2User.getName(); // 구글 사용자 ID
-        String jwt = jwtTokenProvider.createToken(userEmail, List.of("ROLE_USER"));
+        String email = oAuth2User.getAttribute("email");
+        String accessToken = jwtTokenProvider.createToken(email, List.of("ROLE_USER"));
 
-        response.setHeader("Authorization", "Bearer " + jwt);
-        response.sendRedirect("/login/success?token=" + jwt);
+        Cookie cookie = new Cookie("access_token", accessToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true); // HTTPS 환경에서 true
+        cookie.setPath("/");
+        cookie.setMaxAge(60 * 60); // 1시간
+
+        response.addCookie(cookie);
+        getRedirectStrategy().sendRedirect(request, response, "http://localhost:3000/oauth2/redirect");
     }
 }

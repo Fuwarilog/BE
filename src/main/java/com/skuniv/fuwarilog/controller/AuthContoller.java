@@ -33,26 +33,17 @@ import java.util.Objects;
 public class AuthContoller {
 
     private final AuthService authService;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
+
+    @PostMapping("/register")
+    @Operation(summary = "일반 회원가입 API", description = "이름, 이메일, 비밀번호 입력 시 토큰 발급 및 회원등록")
+    public ResponseEntity<?> register(@RequestBody AuthRequest.postRegisterDTO request) {
+        return ResponseEntity.ok(authService.registUser(request));
+    }
 
     @PostMapping("/login")
     @Operation(summary = "일반 로그인 API", description = "이메일, 비밀번호 입력시 토큰 발급")
     public ResponseEntity<?> login(@RequestBody AuthRequest.postLoginDTO request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
-        if(Objects.equals(jwtTokenProvider.createCommonToken(request.getPassword(), List.of("ROLE_USER")), user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String token = jwtTokenProvider.createCommonToken(String.valueOf(user.getPassword()), List.of("ROLE_USER"));
+        String token = authService.loginUser(request.getEmail(), request.getPassword());
         return ResponseEntity.ok(Map.of("token", token));
-    }
-
-    @PostMapping("/register")
-    @Operation(summary = "일반 회원가입 API", description = "이름, 이메일, 비밀번호 입력 시 토큰 발급 및 회원등록")
-    public ResponseEntity<AuthResponse.resRegisterDTO> register(@RequestBody AuthRequest.postRegisterDTO request) {
-        AuthResponse.resRegisterDTO response = authService.registUser(request);
-        return ResponseEntity.ok(response);
     }
 }

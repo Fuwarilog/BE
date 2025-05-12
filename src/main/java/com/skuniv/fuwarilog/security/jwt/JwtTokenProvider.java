@@ -28,7 +28,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Component
 public class JwtTokenProvider {
+
     private final UserRepository userRepository;
+
     @Value("${jwt.secret}")
     private String secretKey;
 
