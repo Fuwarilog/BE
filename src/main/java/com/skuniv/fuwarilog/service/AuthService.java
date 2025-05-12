@@ -26,11 +26,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     public AuthResponse.resRegisterDTO registUser(AuthRequest.postRegisterDTO request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
-
         // 사용자가 존재하면 예외
-        if(user != null) {
+        if(userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new BadRequestException(ErrorResponseStatus.EXIST_USER_EMAIL);
         }
 

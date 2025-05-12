@@ -1,11 +1,16 @@
 package com.skuniv.fuwarilog.security.jwt;
 
+import com.skuniv.fuwarilog.config.exception.BadRequestException;
+import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
+import com.skuniv.fuwarilog.domain.User;
+import com.skuniv.fuwarilog.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
 import io.jsonwebtoken.Claims;
@@ -17,11 +22,15 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 
 @RequiredArgsConstructor
 @Component
 public class JwtTokenProvider {
+
+    private final UserRepository userRepository;
+
     @Value("${jwt.secret}")
     private String secretKey;
 
@@ -45,20 +54,42 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public Authentication getAuthentication(String token) {
-        String userId = getUserId(token);
-        return new UsernamePasswordAuthenticationToken(userId, "", List.of());
+//    public Authentication getAuthentication(String token) {
+//        Claims claims = parseClaims(token);
+//        if(claims.get("userId") == null && claims.get("roles") == null) {
+//            return null;
+//        }
+//
+//        Long userId = Long.valueOf(claims.get("userId").toString());
+//        Optional<User> findUser = userRepository.findById(userId);
+//        if(findUser.isEmpty()) {
+//            return null;
+//        }
+//
+//        UserDetails userDetails = new PrincipalDetails(findUser.get());
+//
+//        return new UsernamePasswordAuthenticationToken(userDetails, "", List.of());
+//    }
+
+    public Claims parseClaims(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload(); // Claim 반환 확인
     }
 
-    // 구글 로그인 아이디 얻기
-    public String getUserId(String token) {
+    // 로그인 아이디 얻기
+    public Long getUserId(String token) {
         SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
-        return Jwts.parser()
+        String userEmail = Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.INVALID_TOKEN));
+
+        return user.getId();
     }
 
     // 로그인 이메일 얻기
