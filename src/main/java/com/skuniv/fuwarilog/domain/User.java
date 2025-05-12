@@ -11,10 +11,9 @@ import java.util.List;
 @Builder
 @Entity
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@DynamicInsert
-@DynamicUpdate
 public class User extends BaseEntity {
 
     @Id

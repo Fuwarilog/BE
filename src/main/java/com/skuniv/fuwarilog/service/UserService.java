@@ -6,16 +6,23 @@ import com.skuniv.fuwarilog.domain.User;
 import com.skuniv.fuwarilog.dto.UserRequest;
 import com.skuniv.fuwarilog.dto.UserResponse;
 import com.skuniv.fuwarilog.repository.UserRepository;
+import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
 @AllArgsConstructor
 public class UserService {
 
+    private final JwtTokenProvider jwtTokenProvider;
     private UserRepository userRepository;
 
     @Transactional
@@ -36,23 +43,24 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
-        User userInfo = User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .password(request.getPassword())
-                .pictureUrl(request.getPictureUrl())
-                .build();
+        if(Objects.equals(user.getProvider(), "google")) {
+            user.setName(request.getName());
+            user = userRepository.save(user);
 
-        User infoDTO = userRepository.save(userInfo);
+        } else {
+            user.setName(request.getName());
+            user.setPassword(jwtTokenProvider.createToken(request.getPassword(), List.of("ROLE_USER")));
+            user = userRepository.save(user);
+        }
 
         return UserResponse.UserInfoDTO.builder()
-                .id(infoDTO.getId())
-                .name(infoDTO.getName())
-                .email(infoDTO.getEmail())
-                .password(infoDTO.getPassword())
-                .pictureUrl(infoDTO.getPictureUrl())
-                .createdAt(infoDTO.getCreatedAt())
-                .updatedAt(infoDTO.getUpdatedAt())
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .password(user.getPassword())
+                .pictureUrl(user.getPictureUrl())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
                 .build();
     }
 }
