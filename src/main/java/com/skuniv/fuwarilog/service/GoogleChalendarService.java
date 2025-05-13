@@ -46,6 +46,9 @@ public class GoogleChalendarService {
     // 필요한 Google calendar API 범위 설정
     private static final List<String> SCOPES = Arrays.asList(CalendarScopes.CALENDAR);
 
+    // credential 경로
+    private static final String CREDENTIALS_FILE_PATH = "src/main/resources/credentials.json";
+
     static {
         try {
             HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
@@ -55,8 +58,6 @@ public class GoogleChalendarService {
             System.exit(1);
         }
     }
-
-    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 
     private static Credential getCredentials() throws IOException, GeneralSecurityException {
         // Load client secrets.
