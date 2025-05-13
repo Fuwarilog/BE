@@ -1,95 +1,80 @@
 package com.skuniv.fuwarilog.security.jwt;
 
-import com.skuniv.fuwarilog.config.exception.BadRequestException;
-import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.domain.User;
-import com.skuniv.fuwarilog.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
+
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
 import io.jsonwebtoken.Claims;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 
 @RequiredArgsConstructor
 @Component
 public class JwtTokenProvider {
-
-    private final UserRepository userRepository;
-
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.token-validity-in-seconds}")
-    private long validityInMilliseconds;
-
-    public String generateToken(String userId) {
-        return createToken(userId, List.of("ROLE_USER"));
-    }
-
-    // 토큰 생성
-    public String createToken(String email, List<String> roles) {
+    // Token 생성
+    public String createToken(String email, List<String> roles, long duration) {
         Instant now = Instant.now();
         SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(validityInMilliseconds)))
+                .expiration(Date.from(now.plusMillis(duration)))
                 .claim("roles", roles)
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
-//    public Authentication getAuthentication(String token) {
-//        Claims claims = parseClaims(token);
-//        if(claims.get("userId") == null && claims.get("roles") == null) {
-//            return null;
-//        }
-//
-//        Long userId = Long.valueOf(claims.get("userId").toString());
-//        Optional<User> findUser = userRepository.findById(userId);
-//        if(findUser.isEmpty()) {
-//            return null;
-//        }
-//
-//        UserDetails userDetails = new PrincipalDetails(findUser.get());
-//
-//        return new UsernamePasswordAuthenticationToken(userDetails, "", List.of());
-//    }
-
-    public Claims parseClaims(String token) {
-        SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
-        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload(); // Claim 반환 확인
+    // accessToken 생성
+    public String createAccessToken(String email, List<String> roles) {
+        return createToken(email, roles, 1000L * 60 * 60 * 24);
     }
 
-    // 로그인 아이디 얻기
-    public Long getUserId(String token) {
+    // refreshToken 생성
+    public String createRefreshToken(String email) {
+        return createToken(email, List.of(), 1000L * 60 * 60 * 24 * 7);
+    }
+
+    // 구글 로그인 후 전달된 JWT를 API 접근 시 인증처리(Header 방식)
+    public Authentication getAuthentication(String token) {
         SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
-        String userEmail = Jwts.parser()
+        Claims claims = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        String email = claims.getSubject();
+        List<String> roles = claims.get("roles", List.class);
+
+        List<SimpleGrantedAuthority> authorities = roles != null
+                ? roles.stream().map(SimpleGrantedAuthority::new).toList()
+                : List.of();
+
+        return new UsernamePasswordAuthenticationToken(email, "", authorities);
+    }
+
+    // 구글 로그인 아이디 얻기
+    public String getUserId(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+        return Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
-
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.INVALID_TOKEN));
-
-        return user.getId();
     }
 
     // 로그인 이메일 얻기
