@@ -2,7 +2,6 @@ package com.skuniv.fuwarilog.config;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.apache.catalina.filters.CorsFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -11,36 +10,26 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 
-@Configuration
-@NoArgsConstructor(access= AccessLevel.PRIVATE)
-public class CorsConfig {
+//@Configuration
+//@NoArgsConstructor(access= AccessLevel.PRIVATE)
+//public class CorsConfig {
 
-    public static CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-
-        ArrayList<String> allowedOriginPatterns = new ArrayList<>();
-        allowedOriginPatterns.add("http://localhost:8080");
-        allowedOriginPatterns.add("http://127.0.0.1:8080");
-        configuration.setAllowedOrigins(allowedOriginPatterns);
-
-        ArrayList<String> allowedHttpMethods = new ArrayList<>();
-        allowedHttpMethods.add("GET");
-        allowedHttpMethods.add("POST");
-        allowedHttpMethods.add("PUT");
-        allowedHttpMethods.add("DELETE");
-        configuration.setAllowedMethods(allowedHttpMethods);
-
-        configuration.setAllowedHeaders(Collections.singletonList("*"));
-
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-
-        return source;
-    }
+//    @Bean
+//    public static CorsConfigurationSource corsConfigurationSource() {
+//        CorsConfiguration configuration = new CorsConfiguration();
+//        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:9092"));
+//        configuration.setAllowedMethods(Arrays.asList("HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+//        configuration.setAllowCredentials(true);
+//        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Authorization-refresh", "Cache-Control", "Content-Type"));
+//
+//        /* 응답 헤더 설정 추가*/
+//        configuration.setExposedHeaders(Arrays.asList("Authorization", "Authorization-refresh"));
+//
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        source.registerCorsConfiguration("/**", configuration);
+//        return source;
+//    }
 
 //    @Bean
 //    public CorsFilter corsFilter() {
@@ -55,4 +44,4 @@ public class CorsConfig {
 //        source.registerCorsConfiguration("/**", config);
 //        return new CorsFilter(source);
 //    }
-}
+//}
