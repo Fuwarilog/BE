@@ -1,8 +1,12 @@
 package com.skuniv.fuwarilog.dto;
 
+import com.skuniv.fuwarilog.domain.PostBookmark;
+import com.skuniv.fuwarilog.domain.PostLike;
+import com.skuniv.fuwarilog.domain.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class UserResponse {
@@ -15,19 +19,27 @@ public class UserResponse {
     public static class UserInfoDTO {
         Long id;
         String name;
+        String email;
+        String password;
         String pictureUrl;
-        List<BookmarkDTO> bookmarks;
+        LocalDateTime createdAt;
+        LocalDateTime updatedAt;
+        List<PostBookmark> bookmarks;
+        List<PostLike> likes;
+
+        public static UserInfoDTO from(User user) {
+            return new UserInfoDTO(
+                    user.getId(),
+                    user.getName(),
+                    user.getEmail(),
+                    user.getPassword(),
+                    user.getPictureUrl(),
+                    user.getCreatedAt(),
+                    user.getUpdatedAt(),
+                    user.getBookmarks(),
+                    user.getLikes());
+        }
+
     }
 
-    @Getter
-    @Setter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Schema(title = "RES 02: 사용자 북마크 리스트 전달 DTO")
-    public static class BookmarkDTO {
-        Long id;
-        Long userId;
-        Long contentId;
-    }
 }

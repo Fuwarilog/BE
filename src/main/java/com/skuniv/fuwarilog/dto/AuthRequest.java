@@ -14,7 +14,7 @@ public class AuthRequest {
     public static class postLoginDTO {
         @Schema(example = "test123@naver.com")
         String email;
-        @Schema(example = "test123")
+        @Schema(example = "test123!")
         String password;
     }
 

@@ -10,13 +10,15 @@ public enum ErrorResponseStatus {
     FCM_SEND_FAIL(2001, "FCM 전송에 실패했습니다."),
     INVALID_CURRENCY_CODE(2002, "잘못된 통화 코드입니다."),
     EXIST_USER_EMAIL(2003, "이메일이 존재합니다."),
+    INVALID_SAME_PASSWORD(2004, "이미 존재하는 비밀번호입니다."),
+    INVALID_PASSWORD(2005, "비밀번호는 영문, 숫자, 기호로 이루어져야합니다."),
 
     RESPONSE_ERROR(3000, "값을 불러오는데 실패했습니다."),
 
     SECRET_FILE_NOT_FOUND(4001, "파일을 찾을 수 없습니다."),
     INVALID_SECRET_FILE(4002, "잘못된 파일입니다."),
-    FCM_TOKEN_NOT_FOUND(4003, "FCM토큰을 찾지 못했습니다."),
-    USER_NOT_FOUND(4004, "사용자를 찾을 수 없습니다.");
+    USER_NOT_FOUND(4003, "사용자를 찾을 수 없습니다."),
+    INVALID_TOKEN(4004, "잘못된 토큰입니다.");
 
     private final int code;
     private final String message;

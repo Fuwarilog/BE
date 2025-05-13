@@ -17,13 +17,12 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI openAPI() {
-        String securityJwtName = "JWT";
-        SecurityRequirement securityRequirement = new SecurityRequirement().addList(securityJwtName);
-        Components components = new Components().addSecuritySchemes(securityJwtName,
-                new SecurityScheme().name(securityJwtName)
+        SecurityRequirement securityRequirement = new SecurityRequirement().addList(BEARER_TOKEN_PREFIZ);
+        Components components = new Components().addSecuritySchemes(BEARER_TOKEN_PREFIZ,
+                new SecurityScheme().name(BEARER_TOKEN_PREFIZ)
                         .type(SecurityScheme.Type.HTTP)
-                        .scheme(BEARER_TOKEN_PREFIZ)
-                        .bearerFormat(securityJwtName));
+                        .scheme("bearer")
+                        .bearerFormat("JWT"));
 
         return new OpenAPI().addSecurityItem(securityRequirement).components(components);
     }
