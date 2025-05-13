@@ -4,17 +4,18 @@ import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.User;
 import com.skuniv.fuwarilog.dto.AuthRequest;
-import com.skuniv.fuwarilog.dto.AuthResponse;
 import com.skuniv.fuwarilog.repository.UserRepository;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -25,45 +26,78 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthResponse.resRegisterDTO registUser(AuthRequest.postRegisterDTO request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
-
+    public ResponseEntity<?> registUser(HttpServletRequest request, HttpServletResponse response, AuthRequest.postRegisterDTO infoDTO) {
         // 사용자가 존재하면 예외
-        if(user != null) {
+        if(userRepository.findByEmail(infoDTO.getEmail()).isPresent()) {
             throw new BadRequestException(ErrorResponseStatus.EXIST_USER_EMAIL);
         }
 
         // 신규 사용자면 등록
-        String token = jwtTokenProvider.createToken(String.valueOf(request.getPassword()), List.of("ROLE_USER"));
+        String accessToken = jwtTokenProvider.createAccessToken(infoDTO.getEmail(), List.of("ROLE_USER"));
+        String refreshToken = jwtTokenProvider.createRefreshToken(infoDTO.getEmail());
 
-        User user2 = User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
+        // AccessToken 쿠키
+        Cookie accessCookie = new Cookie("access_token", accessToken);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(60 * 60 * 24);
+        accessCookie.setHttpOnly(true);
+        accessCookie.setSecure(true);
+
+        // RefreshToken 쿠키
+        Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(60 * 60 * 24 * 7);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(true);
+
+        // 사용자 정보 저장
+        User user = User.builder()
+                .name(infoDTO.getName())
+                .email(infoDTO.getEmail())
+                .password(infoDTO.getPassword())
                 .provider(null)
-                .password(token)
+                .refreshToken(refreshToken)
                 .build();
 
-        user2 = userRepository.save(user2);
+        userRepository.save(user);
 
-        return AuthResponse.resRegisterDTO.builder()
-                .userId(user2.getId())
-                .name(user2.getName())
-                .email(user2.getEmail())
-                .password(user2.getPassword())
-                .build();
+        response.addCookie(accessCookie);
+        response.addCookie(refreshCookie);
+
+        return ResponseEntity.ok().build();
     }
 
-    public String loginUser(String email, String password) {
-        User user = userRepository.findByEmail(email)
+    public ResponseEntity<?> loginUser(HttpServletRequest request, HttpServletResponse response, AuthRequest.postLoginDTO infoDTO) {
+        User user = userRepository.findByEmail(infoDTO.getEmail())
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
-        String token = jwtTokenProvider.createToken(password, List.of("ROLE_USER"));
+        String accesseToken = jwtTokenProvider.createAccessToken(infoDTO.getEmail(), List.of("ROLE_USER"));
+        String refreshToken = jwtTokenProvider.createRefreshToken(infoDTO.getEmail());
 
-        if (!passwordEncoder.matches(token, user.getPassword())) {
+        if (!jwtTokenProvider.getUserEmail(accesseToken).equals(user.getEmail())) {
             throw new RuntimeException("Invalid credentials");
         }
 
-        return token;
+        // AccessToken 쿠키
+        Cookie accessCookie = new Cookie("access_token", accesseToken);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(60 * 60 * 24);
+        accessCookie.setHttpOnly(true);
+        accessCookie.setSecure(true);
+
+        // RefreshToken 쿠키
+        Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(60 * 60 * 24 * 7);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(true);
+
+        user.setRefreshToken(refreshToken);
+        userRepository.save(user);
+
+        response.addCookie(accessCookie);
+        response.addCookie(refreshCookie);
+
+        return ResponseEntity.ok().build();
     }
 }

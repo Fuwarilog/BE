@@ -2,19 +2,18 @@ package com.skuniv.fuwarilog.security.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
 import io.jsonwebtoken.Claims;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 
@@ -25,29 +24,46 @@ public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.token-validity-in-seconds}")
-    private long validityInMilliseconds;
-
-    public String generateToken(String userId) {
-        return createToken(userId, List.of("ROLE_USER"));
-    }
-
-    // 토큰 생성
-    public String createToken(String email, List<String> roles) {
+    // Token 생성
+    public String createToken(String email, List<String> roles, long duration) {
         Instant now = Instant.now();
         SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(validityInMilliseconds)))
+                .expiration(Date.from(now.plusMillis(duration)))
                 .claim("roles", roles)
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
+    // accessToken 생성
+    public String createAccessToken(String email, List<String> roles) {
+        return createToken(email, roles, 1000L * 60 * 60 * 24);
+    }
+
+    // refreshToken 생성
+    public String createRefreshToken(String email) {
+        return createToken(email, List.of(), 1000L * 60 * 60 * 24 * 7);
+    }
+
+    // 구글 로그인 후 전달된 JWT를 API 접근 시 인증처리(Header 방식)
     public Authentication getAuthentication(String token) {
-        String userId = getUserId(token);
-        return new UsernamePasswordAuthenticationToken(userId, "", List.of());
+        SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+        Claims claims = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        String email = claims.getSubject();
+        List<String> roles = claims.get("roles", List.class);
+
+        List<SimpleGrantedAuthority> authorities = roles != null
+                ? roles.stream().map(SimpleGrantedAuthority::new).toList()
+                : List.of();
+
+        return new UsernamePasswordAuthenticationToken(email, "", authorities);
     }
 
     // 구글 로그인 아이디 얻기
