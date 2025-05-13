@@ -10,6 +10,9 @@ import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
@@ -33,26 +36,60 @@ import java.util.Objects;
 public class AuthContoller {
 
     private final AuthService authService;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-
-    @PostMapping("/login")
-    @Operation(summary = "일반 로그인 API", description = "이메일, 비밀번호 입력시 토큰 발급")
-    public ResponseEntity<?> login(@RequestBody AuthRequest.postLoginDTO request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
-        if(Objects.equals(jwtTokenProvider.createCommonToken(request.getPassword(), List.of("ROLE_USER")), user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String token = jwtTokenProvider.createCommonToken(String.valueOf(user.getPassword()), List.of("ROLE_USER"));
-        return ResponseEntity.ok(Map.of("token", token));
-    }
+    private final UserRepository userRepository;
 
     @PostMapping("/register")
     @Operation(summary = "일반 회원가입 API", description = "이름, 이메일, 비밀번호 입력 시 토큰 발급 및 회원등록")
-    public ResponseEntity<AuthResponse.resRegisterDTO> register(@RequestBody AuthRequest.postRegisterDTO request) {
-        AuthResponse.resRegisterDTO response = authService.registUser(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> register(HttpServletRequest request, HttpServletResponse response, @RequestBody AuthRequest.postRegisterDTO infoDTO) {
+        ResponseEntity<?> userInfo = authService.registUser(request, response, infoDTO);
+        return ResponseEntity.ok(userInfo);
+    }
+
+    @PostMapping("/login")
+    @Operation(summary = "일반 로그인 API", description = "이메일, 비밀번호 입력시 토큰 발급")
+    public ResponseEntity<?> login(HttpServletRequest request, HttpServletResponse response, @RequestBody AuthRequest.postLoginDTO infoDTO) {
+        ResponseEntity<?> userInfo = authService.loginUser(request, response, infoDTO);
+        return ResponseEntity.ok(userInfo);
+    }
+
+    @PostMapping("/token/refresh")
+    @Operation(summary = "토큰 갱신 API", description = "토큰 재발급")
+    public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        Cookie[] cookies = request.getCookies();
+        if(cookies == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No cookies found.");
+        }
+
+        String refreshToken = null;
+        for (Cookie cookie : cookies) {
+            if ("refresh_token".equals(cookie.getName())) {
+                refreshToken = cookie.getValue();
+                break;
+            }
+        }
+
+        if(refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token.");
+        }
+
+        String email = jwtTokenProvider.getUserEmail(refreshToken);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        if (!refreshToken.equals(user.getRefreshToken())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("refresh token missmatch.");
+        }
+
+        String newAccessToken = jwtTokenProvider.createAccessToken(email, List.of("ROLE_USER"));
+
+        Cookie accessTokenCookie = new Cookie("access_token", newAccessToken);
+        accessTokenCookie.setPath("/");
+        accessTokenCookie.setSecure(true);
+        accessTokenCookie.setMaxAge(60 * 60 * 24 );
+        accessTokenCookie.setHttpOnly(true);
+
+        response.addCookie(accessTokenCookie);
+        return ResponseEntity.ok().build();
     }
 }
