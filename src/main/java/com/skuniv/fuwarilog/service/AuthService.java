@@ -54,7 +54,7 @@ public class AuthService {
         User user = User.builder()
                 .name(infoDTO.getName())
                 .email(infoDTO.getEmail())
-                .password(infoDTO.getPassword())
+                .password(passwordEncoder.encode(infoDTO.getPassword()))
                 .provider(null)
                 .refreshToken(refreshToken)
                 .build();
@@ -64,7 +64,7 @@ public class AuthService {
         response.addCookie(accessCookie);
         response.addCookie(refreshCookie);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(accessCookie);
     }
 
     public ResponseEntity<?> loginUser(HttpServletRequest request, HttpServletResponse response, AuthRequest.postLoginDTO infoDTO) {
@@ -74,8 +74,10 @@ public class AuthService {
         String accesseToken = jwtTokenProvider.createAccessToken(infoDTO.getEmail(), List.of("ROLE_USER"));
         String refreshToken = jwtTokenProvider.createRefreshToken(infoDTO.getEmail());
 
-        if (!jwtTokenProvider.getUserEmail(accesseToken).equals(user.getEmail())) {
-            throw new RuntimeException("Invalid credentials");
+        if (passwordEncoder.matches(infoDTO.getPassword(), user.getPassword())) {
+            System.out.println("true");
+        } else {
+            System.out.println("false");
         }
 
         // AccessToken 쿠키
@@ -98,6 +100,6 @@ public class AuthService {
         response.addCookie(accessCookie);
         response.addCookie(refreshCookie);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(accessCookie);
     }
 }

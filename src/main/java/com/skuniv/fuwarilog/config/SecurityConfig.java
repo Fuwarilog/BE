@@ -43,8 +43,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
 //                .cors(cors -> cors
-//                        .configurationSource(CorsConfig.corsConfigurationSource())) // AbstractHttpConfigurer::disable
-//                .httpBasic(AbstractHttpConfigurer::disable)
+//                        .configurationSource(CorsConfig.corsConfigurationSource())
+//                )
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers(
                                 "/signup", "/", "/login","/swagger-ui/**",
