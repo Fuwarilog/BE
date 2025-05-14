@@ -31,14 +31,15 @@ public class UserController {
     @GetMapping("/my-info")
     @Operation(summary = "사용자 정보 조회", description="성공시 사용자 정보 반환")
     public ResponseEntity<UserResponse.UserInfoDTO> getUserInfo(
-            @RequestHeader("Authorization") String token,
-            @RequestParam @Parameter(description = "userId", required = true) Long id) {
+            @RequestHeader("Authorization") String token) {
 
         // 1. 토큰 확인
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
 
-        // 2. 사용자 정보 조회
-        UserResponse.UserInfoDTO userInfo = userService.findUserInfo(id);
+        // 2. 토큰 -> 사용자 Id 반환
+        Long userId = jwtTokenProvider.getUserId(token);
+
+        UserResponse.UserInfoDTO userInfo = userService.findUserInfo(userId);
         return ResponseEntity.ok(userInfo);
     }
 
@@ -49,12 +50,8 @@ public class UserController {
             @RequestPart("user info") @Valid UserRequest.UserInfoDTO userDto,
             @RequestPart(value = "image", required = false) MultipartFile image) {
 
-        log.info(token);
-
         // 1. 토큰 확인
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
-
-        log.info(token);
 
         // 2. 토큰 -> 사용자 Id 반환
         Long userId = jwtTokenProvider.getUserId(token);
