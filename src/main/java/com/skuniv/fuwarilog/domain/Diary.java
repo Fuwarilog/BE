@@ -28,9 +28,6 @@ public class Diary extends BaseEntity {
     @Column(name="title", columnDefinition = "VARCHAR(256)")
     private String title;
 
-    @Column(name = "description", columnDefinition = "VARCHAR(64)")
-    private String description;
-
     @Column(name="country", columnDefinition = "VARCHAR(64)")
     private String country;
 

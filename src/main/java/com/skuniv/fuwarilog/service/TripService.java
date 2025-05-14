@@ -3,8 +3,11 @@ package com.skuniv.fuwarilog.service;
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.Diary;
+import com.skuniv.fuwarilog.domain.DiaryList;
 import com.skuniv.fuwarilog.domain.Trip;
 import com.skuniv.fuwarilog.domain.User;
+import com.skuniv.fuwarilog.repository.DiaryListRepository;
+import com.skuniv.fuwarilog.repository.DiaryRepository;
 import com.skuniv.fuwarilog.repository.TripRepository;
 import com.skuniv.fuwarilog.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -23,6 +26,8 @@ public class TripService {
     private final GoogleCalendarService googleCalendarService;
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
+    private final DiaryRepository diaryRepository;
+    private final DiaryListRepository diaryListRepository;
 
     /**
      * @implSpec 구글켈린더에 맞는 서버 Trip 데이터 생성
@@ -45,12 +50,25 @@ public class TripService {
         trip.setStartDate(LocalDate.parse(startDate));
         trip.setEndDate(LocalDate.parse(endDate));
 
+        Diary diary = Diary.builder().build();
+        diary.setTitle(title);
+        diary.setEndDate(LocalDate.parse(endDate));
+        diary.setEndDate(LocalDate.parse(startDate));
+        diaryRepository.save(diary);
+
+        // 여행일정 마다 다이어리 생성
+        for (LocalDate d=LocalDate.parse(startDate); d.compareTo(LocalDate.parse(endDate)) <= 0; d = d.plusDays(1)) {
+            DiaryList diaries = DiaryList.builder().build();
+            diaries.setDate(d);
+            diaryListRepository.save(diaries);
+        }
+
         return tripRepository.save(trip).getId();
     }
 
     /**
      * @implSpec 구글 캘린더 일정 삭제 시 서버 Trip 데이터도 같이 삭제됨
-     * @param id 다이어리 아이디
+     * @param id 일정 아이디
      * */
     public void deleteEvent(Long id) throws Exception{
         Trip trip = tripRepository.findById(id)
@@ -58,6 +76,8 @@ public class TripService {
 
         googleCalendarService.deleteEvent(trip.getGoogleEventId());
         tripRepository.delete(trip);
+        diaryRepository.deleteById(trip.getId());
+        diaryListRepository.deleteById(trip.getId());
     }
 
     /**
@@ -65,7 +85,7 @@ public class TripService {
      * @param date String 형식으로 날짜 작성 ex) yyyy-MM-dd
      * @return List<Diary> 날짜에 대한 다이어리 모두 반환
      * */
-    public Optional<Trip> getEventsByDate(Long userId, Long tripId, String date) {
+    public Optional<Trip> getEvents(Long userId, Long tripId, String date) {
         // 1. 여행 리스트 객체 생성
         Optional<Trip> tripList;
 
@@ -85,5 +105,17 @@ public class TripService {
         }
 
         return tripList;
+    }
+
+    public List<Diary> getDiariesByTrip(Long userId, Long tripId) {
+        // 1. 사용자 존재 확인
+        User user =  userRepository.findById(userId)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        // 2. 여행일정 존재 확인
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.TRIP_NOT_FOUND));
+
+        return diaryRepository.findAllByTripId(tripId);
     }
 }
