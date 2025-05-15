@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Builder
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class ExchangeRate extends BaseEntity {
 

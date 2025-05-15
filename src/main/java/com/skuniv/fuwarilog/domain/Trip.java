@@ -2,15 +2,14 @@ package com.skuniv.fuwarilog.domain;
 
 import com.skuniv.fuwarilog.domain.enums.TripStatus;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
 @Entity
 @Builder
 @NoArgsConstructor(access= AccessLevel.PROTECTED)
@@ -26,6 +25,15 @@ public class Trip extends BaseEntity{
     @JoinColumn(name="user_id")
     private User user;
 
+    @Column(name = "google_event_id")
+    private String googleEventId;
+
+    @Column(name = "title", columnDefinition = "VARCHAR(64)")
+    private String title;
+
+    @Column(name = "description", columnDefinition = "VARCHAR(64)")
+    private String description;
+
     @Column(name="country", columnDefinition = "VARCHAR(64)")
     private String country;
 
@@ -34,9 +42,6 @@ public class Trip extends BaseEntity{
 
     @Column(name="end_date")
     private LocalDate endDate;
-
-    @Column(name="is_active")
-    private TripStatus isActive;
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL)
     private List<Diary> diaries = new ArrayList<>();
