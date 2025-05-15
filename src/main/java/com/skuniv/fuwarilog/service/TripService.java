@@ -6,6 +6,7 @@ import com.skuniv.fuwarilog.domain.Diary;
 import com.skuniv.fuwarilog.domain.DiaryList;
 import com.skuniv.fuwarilog.domain.Trip;
 import com.skuniv.fuwarilog.domain.User;
+import com.skuniv.fuwarilog.dto.TripRequest;
 import com.skuniv.fuwarilog.dto.TripResponse;
 import com.skuniv.fuwarilog.repository.DiaryListRepository;
 import com.skuniv.fuwarilog.repository.DiaryRepository;
@@ -92,8 +93,9 @@ public class TripService {
 
     /**
      * @implSpec 특정 날짜의 서버 Trip 데이터 조회
+     * @param tripId 특정 여행일정 아이디
      * @param date String 형식으로 날짜 작성 ex) yyyy-MM-dd
-     * @return List<Diary> 날짜에 대한 다이어리 모두 반환
+     * @return List<Trip> 날짜에 대한 여행일정을 반환
      * */
     public Optional<Trip> getEvents(Long userId, Long tripId, String date) {
         // 1. 여행 리스트 객체 생성
@@ -117,6 +119,12 @@ public class TripService {
         return tripList;
     }
 
+    /**
+     * @implSpec 특정 여행에 대한 다이어리 조회
+     * @param userId 사용자 아이디
+     * @param tripId 여행일정 아이디
+     * @return List<Diary> 여행일정에 대한 다이어리 모두 반환
+     * */
     public List<Diary> getDiariesByTrip(Long userId, Long tripId) {
         // 1. 사용자 존재 확인
         User user =  userRepository.findById(userId)
@@ -127,5 +135,25 @@ public class TripService {
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.TRIP_NOT_FOUND));
 
         return diaryRepository.findAllByTripId(tripId);
+    }
+
+    public TripResponse.TripInfoDTO editEvent(Long userId, Long tripId, TripRequest.TripInfoDTO infoDTO) {
+        // 1. 사용자 존재 확인
+        User user =  userRepository.findById(userId)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        // 2. 여행일정 존재 확인
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.TRIP_NOT_FOUND));
+
+        trip.setTitle(infoDTO.getTitle());
+        trip.setDescription(infoDTO.getDescription());
+        trip.setStartDate(infoDTO.getStartDate());
+        trip.setEndDate(infoDTO.getEndDate());
+        trip.setCountry(infoDTO.getCountry());
+
+        trip = tripRepository.save(trip);
+
+        return TripResponse.TripInfoDTO.from(trip);
     }
 }

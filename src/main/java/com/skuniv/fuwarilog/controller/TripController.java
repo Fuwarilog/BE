@@ -56,6 +56,22 @@ public class TripController {
         }
     }
 
+    @PostMapping("/event/{id}")
+    @Operation(summary = "여행일정 수정 API", description = " 여행ID 입력 시 해당 일정 수정 가능")
+    public ResponseEntity<TripResponse.TripInfoDTO> editEvent(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(required = false) Long tripId,
+            @RequestBody TripRequest.TripInfoDTO infoDTO) {
+
+        // 1. 토큰 확인
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
+
+        // 2. 토큰 -> 사용자 아이디
+        Long userId = jwtTokenProvider.getUserId(token);
+        TripResponse.TripInfoDTO result = tripService.editEvent(userId, tripId, infoDTO);
+        return ResponseEntity.ok(result);
+    }
+
     @DeleteMapping("/event/{id}")
     @Operation(summary = "일정 삭제 API", description = "일정 id 입력 시 해당하는 여행일정 삭제")
     public ResponseEntity<Void> deleteTrip(
