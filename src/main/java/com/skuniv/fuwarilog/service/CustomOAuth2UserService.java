@@ -21,23 +21,29 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
 
-        // 제공자 정보
+        // 제공자 정보 추출
         String provider = userRequest.getClientRegistration().getRegistrationId();
 
-        // 사용자 정보
+        // 사용자 정보 추출
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
-        String profile_image = oAuth2User.getAttribute("profile_image_url"); // 실행x
+        String picture = oAuth2User.getAttribute("picture");
+
+        // google AccessToken 추출
+        String access_token = userRequest.getAccessToken().getTokenValue();
 
         // DB에 유저 없으면 저장
-        userRepository.findByEmail(email)
-                .orElseGet(() -> userRepository.save(User.builder()
+        User user = userRepository.findByEmail(email).orElseGet(() -> userRepository.save(User.builder()
                         .email(email)
                         .name(name)
                         .provider(provider)
-                        .pictureUrl(profile_image)
-                        .password(null)  // 비밀번호는 의미 없는 값 또는 null로 저장한다.
+                        .pictureUrl(picture)
+                        .googleAccessToken(access_token)
                         .build()));
+
+        // 로그인마다 토큰 갱신
+        user.setGoogleAccessToken(access_token);
+        userRepository.save(user);
 
         return oAuth2User;
     }
