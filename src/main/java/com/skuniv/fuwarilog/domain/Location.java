@@ -11,12 +11,16 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor(access= AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class Map extends BaseEntity {
+public class Location extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "map_history_id", nullable = false)
+    @Column(name = "location_id", nullable = false)
     private long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(name = "place_name", columnDefinition = "VARCHAR(255)")
     private String placeName;
@@ -33,7 +37,6 @@ public class Map extends BaseEntity {
     @Column(name = "bookmarked")
     private boolean bookmarked;
 
-    @Column(name = "searched_at")
-    @ColumnDefault(value = "CurrentTimestamp")
+    @Column(name = "searched_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime searchedAt;
 }
