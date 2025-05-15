@@ -6,6 +6,7 @@ import com.skuniv.fuwarilog.domain.Diary;
 import com.skuniv.fuwarilog.domain.DiaryList;
 import com.skuniv.fuwarilog.domain.Trip;
 import com.skuniv.fuwarilog.domain.User;
+import com.skuniv.fuwarilog.dto.TripResponse;
 import com.skuniv.fuwarilog.repository.DiaryListRepository;
 import com.skuniv.fuwarilog.repository.DiaryRepository;
 import com.skuniv.fuwarilog.repository.TripRepository;
@@ -38,46 +39,55 @@ public class TripService {
      * @param country 여행지 입력
      * @return id 여행일정 Trip 아이디
     * */
-    public Long createEvent(String title, String description, String startDate, String endDate, String country) throws Exception {
-        String eventId = googleCalendarService.addEvent(title, description, startDate, endDate);
+    public TripResponse.TripInfoDTO createEvent(String userEmail, String title, String description, String startDate, String endDate, String country) throws Exception {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        String eventId = googleCalendarService.addEvent(userEmail, title, description, startDate, endDate);
 
         log.info("eventId: {}", eventId);
-        Trip trip = Trip.builder().build();
-        trip.setTitle(title);
-        trip.setCountry(country);
-        trip.setDescription(description);
-        trip.setGoogleEventId(eventId);
-        trip.setStartDate(LocalDate.parse(startDate));
-        trip.setEndDate(LocalDate.parse(endDate));
+        Trip newTrip = Trip.builder()
+                .user(user)
+                .title(title)
+                .description(description)
+                .country(country)
+                .googleEventId(eventId)
+                .startDate(LocalDate.parse(startDate))
+                .endDate(LocalDate.parse(endDate))
+                .build();
+        tripRepository.save(newTrip);
 
-        Diary diary = Diary.builder().build();
-        diary.setTitle(title);
-        diary.setEndDate(LocalDate.parse(endDate));
-        diary.setEndDate(LocalDate.parse(startDate));
-        diaryRepository.save(diary);
+        // ** 여행 일정 생성 시 자동으로 다이어리 생성되게끔 만들어야함
+        Diary newDiary = Diary.builder()
+                .trip(newTrip)
+                .title(title)
+                .startDate(LocalDate.parse(startDate))
+                .endDate(LocalDate.parse(endDate))
+                .build();
+        diaryRepository.save(newDiary);
 
         // 여행일정 마다 다이어리 생성
         for (LocalDate d=LocalDate.parse(startDate); d.compareTo(LocalDate.parse(endDate)) <= 0; d = d.plusDays(1)) {
-            DiaryList diaries = DiaryList.builder().build();
-            diaries.setDate(d);
-            diaryListRepository.save(diaries);
+            DiaryList newDiaries = DiaryList.builder()
+                    .diary(newDiary)
+                    .date(d)
+                    .build();
+            diaryListRepository.save(newDiaries);
         }
 
-        return tripRepository.save(trip).getId();
+        return TripResponse.TripInfoDTO.from(newTrip);
     }
 
     /**
      * @implSpec 구글 캘린더 일정 삭제 시 서버 Trip 데이터도 같이 삭제됨
      * @param id 일정 아이디
      * */
-    public void deleteEvent(Long id) throws Exception{
+    public void deleteEvent(String userEmail, Long id) throws Exception{
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.TRIP_NOT_FOUND));
 
-        googleCalendarService.deleteEvent(trip.getGoogleEventId());
+        googleCalendarService.deleteEvent(userEmail, trip.getGoogleEventId());
         tripRepository.delete(trip);
-        diaryRepository.deleteById(trip.getId());
-        diaryListRepository.deleteById(trip.getId());
     }
 
     /**

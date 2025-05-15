@@ -31,6 +31,9 @@ public class User extends BaseEntity {
     @Column(name="refresh_token")
     private String refreshToken;
 
+    @Column(name = "google_access_token")
+    private String googleAccessToken;
+
     @Column(name="name", columnDefinition = "VARCHAR(64)")
     private String name;
 

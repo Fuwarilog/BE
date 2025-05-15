@@ -66,4 +66,3 @@ buildNumber.properties
 *.tar.gz
 *.rar
 /.mvn/
-/src/main/resources/credentials.json

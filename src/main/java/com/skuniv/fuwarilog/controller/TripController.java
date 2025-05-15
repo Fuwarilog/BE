@@ -5,6 +5,7 @@ import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.Diary;
 import com.skuniv.fuwarilog.domain.Trip;
 import com.skuniv.fuwarilog.dto.TripRequest;
+import com.skuniv.fuwarilog.dto.TripResponse;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.DiaryService;
 import com.skuniv.fuwarilog.service.TripService;
@@ -29,23 +30,27 @@ public class TripController {
 
     @PostMapping("/event")
     @Operation(summary = "일정 추가 API", description = "제목, 설명, 시작일, 마지막일 입력하면 일정 ID 반환 - 다이어리 자동 생성")
-    public ResponseEntity<Long> createTrip(
+    public ResponseEntity<TripResponse.TripInfoDTO> createTrip(
             @RequestHeader("Authorization") String token,
             @RequestBody TripRequest.TripInfoDTO event) {
 
         // 1. 토큰 확인
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
 
-        // 2. 구글캘린더 일정 -> 여행 일정
+        // 2. 사용자 이메일 추출
+        String userEmail = jwtTokenProvider.getUserEmail(token);
+
+        // 3. 구글캘린더 일정 -> 여행 일정
         try {
-            Long id = tripService.createEvent(
+            TripResponse.TripInfoDTO result = tripService.createEvent(
+                    userEmail,
                     event.getTitle(),
                     event.getDescription(),
                     event.getStartDate().toString(),
                     event.getEndDate().toString(),
                     event.getCountry()
             );
-            return ResponseEntity.ok(id);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -60,8 +65,11 @@ public class TripController {
         // 1. 토큰 확인
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
 
+        // 2. 사용자 이메일 추출
+        String userEmail = jwtTokenProvider.getUserEmail(token);
+
         try {
-            tripService.deleteEvent(id);
+            tripService.deleteEvent(userEmail, id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
