@@ -58,11 +58,13 @@ public class LocationService {
     }
 
     public List<LocationResponse.PlaceDTO> searchPlaces(String keyword) {
-        URI uri = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/geocode/json")
-                .queryParam("query")
+        URI uri = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/place/textsearch/json")
+                .queryParam("query", keyword)
                 .queryParam("key", apiKey)
                 .build()
                 .toUri();
+
+        log.info(uri.toString());
 
         Map<String, Object> response = restTemplate.getForObject(uri, Map.class);
         List<Map<String, Object>> results = (List<Map<String, Object>>) response.get("results");
