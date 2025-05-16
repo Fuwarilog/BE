@@ -25,6 +25,9 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
+  data:
+    mongodb:
+      url: mongodb+srv://${MONGO_USER}:${MONGO_PW}@fuwarilog.ttscmet.mongodb.net/${MONGO_DB}?retryWrites=true&w=majority&appName=fuwarilog
   security:
     user:
       name: ${NAME}
