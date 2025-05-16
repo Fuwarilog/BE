@@ -56,5 +56,8 @@ public class User extends BaseEntity {
     private List<PlaceBookmark> placeBookmarks = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Tag> tags = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Location> locations = new ArrayList<>();
 }

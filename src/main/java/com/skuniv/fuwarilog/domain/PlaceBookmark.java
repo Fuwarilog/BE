@@ -3,6 +3,8 @@ package com.skuniv.fuwarilog.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+@Getter
+@Setter
 @Entity
 @Builder
 @NoArgsConstructor(access= AccessLevel.PROTECTED)
