@@ -1,5 +1,6 @@
 package com.skuniv.fuwarilog.controller;
 
+import com.nimbusds.oauth2.sdk.SuccessResponse;
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.User;
@@ -8,6 +9,7 @@ import com.skuniv.fuwarilog.dto.AuthResponse;
 import com.skuniv.fuwarilog.repository.UserRepository;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.AuthService;
+import com.sun.net.httpserver.Authenticator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
@@ -17,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.ErrorResponseException;
@@ -91,5 +95,24 @@ public class AuthContoller {
 
         response.addCookie(accessTokenCookie);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            String email = auth.getName();
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            user.setRefreshToken(null);
+            userRepository.save(user);
+        }
+
+        // 쿠키 제거
+        authService.invalidateCookie("access_token", response);
+        authService.invalidateCookie("refresh_token", response);
+
+        return ResponseEntity.ok("로그아웃 성공");
     }
 }
