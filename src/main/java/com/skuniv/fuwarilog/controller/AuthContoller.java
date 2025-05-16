@@ -98,6 +98,7 @@ public class AuthContoller {
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "로그아웃 API", description = "토큰 삭제")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null) {
