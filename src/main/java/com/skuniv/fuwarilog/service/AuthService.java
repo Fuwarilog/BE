@@ -26,6 +26,13 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * @implSpec 회원가입 후 토큰 반환
+     * @param request HTTP RequestBody
+     * @param response HTTP ResponseBody
+     * @param infoDTO 사용자 정보 DTO(이름, 이메일, 비밀번호)
+     * @return accssCookie 사용자 액세스 토큰
+     */
     public ResponseEntity<?> registUser(HttpServletRequest request, HttpServletResponse response, AuthRequest.postRegisterDTO infoDTO) {
         // 사용자가 존재하면 예외
         if(userRepository.findByEmail(infoDTO.getEmail()).isPresent()) {
@@ -67,6 +74,13 @@ public class AuthService {
         return ResponseEntity.ok(accessCookie);
     }
 
+    /**
+     * @implSpec 로그인 후 토큰 반환
+     * @param request HTTP RequestBody
+     * @param response HTTP ResponseBody
+     * @param infoDTO 사용자 정보 DTO(이메일, 비밀번호)
+     * @return accssCookie 사용자 액세스 토큰
+     */
     public ResponseEntity<?> loginUser(HttpServletRequest request, HttpServletResponse response, AuthRequest.postLoginDTO infoDTO) {
         User user = userRepository.findByEmail(infoDTO.getEmail())
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
@@ -103,7 +117,11 @@ public class AuthService {
         return ResponseEntity.ok(accessCookie);
     }
 
-
+    /**
+     * @implSpec 쿠키에 저장된 토큰 삭제
+     * @param name 토큰명 지정
+     * @param response HTTP ResponseBody
+     */
     public void invalidateCookie(String name, HttpServletResponse response) {
         Cookie cookie = new Cookie(name, null);
         cookie.setHttpOnly(true);

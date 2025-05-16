@@ -27,6 +27,13 @@ public class DiaryService {
     private final UserRepository userRepository;
     private final DiaryListRepository diaryListRepository;
 
+    /**
+     * @implSpec 초기 다이어리에 지도 데이터 저장
+     * @param userId 사용자 고유번호
+     * @param diaryListId 다이어리 폴더의 포스트 고유번호
+     * @param content 다이어리 작성 내용
+     * @param date 특정 날짜(오늘 날짜)
+     */
     public void saveDiaryWithLocationData(Long userId, Long diaryListId, String content, LocalDate date) {
         // 0. 유효성 검사
         User user = userRepository.findById(userId)

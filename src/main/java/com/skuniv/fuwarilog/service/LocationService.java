@@ -32,6 +32,12 @@ public class LocationService {
     @Value("${google.maps.key}")
     private String apiKey;
 
+    /**
+     * @implSpec 사용자 현재 위치 반환
+     * @param userId 사용자 고유 번호
+     * @param locateDto 위치 요청 값(위도, 경도)
+     * @return address 주소, locateDto.getLatitude() 위도, locateDto.getLongitude()) 경도
+     */
     public LocationResponse.CurrentLocationDTO getCurrentLocation(Long userId, LocationRequest.LocationReqDTO locateDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
@@ -57,6 +63,11 @@ public class LocationService {
         }
     }
 
+    /**
+     * @implSpec 검색어에 따른 장소 리스트 반환
+     * @param keyword 검색 단어
+     * @return places 장소명, 주소, 위치
+     */
     public List<LocationResponse.PlaceDTO> searchPlaces(String keyword) {
         URI uri = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/place/textsearch/json")
                 .queryParam("query", keyword)
@@ -83,6 +94,11 @@ public class LocationService {
         return places;
     }
 
+    /**
+     * @implSpec 장소 북마크로 저장
+     * @param userId 사용자 고유 번호
+     * @param dto 북마크 요청 DTO
+     */
     public void savePlace(Long userId, LocationRequest.MapBookmarkReqDTO dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
@@ -97,6 +113,12 @@ public class LocationService {
         locationRepository.save(location);
     }
 
+    /**
+     * @implSpec 경로 탐색 결과 반환
+     * @param userId 사용자 고유 번호
+     * @param dto 경로 탐색 요청 DTO
+     * @return duration, distance, instructions 경로 탐색 값 반환
+     */
     // 다이어리에 넣을지 보류
     public LocationResponse.RouteDTO getRoute(Long userId, LocationRequest.RouteReqDTO dto) {
         URI uri = UriComponentsBuilder.fromHttpUrl("https://maps.googleapis.com/maps/api/directions/json")
