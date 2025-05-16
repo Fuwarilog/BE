@@ -36,3 +36,4 @@ public class CurrencyPrediction extends BaseEntity {
     @JsonFormat(pattern = "yyyy-mm-dd HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime predictDate;
 }
+// 예측 부분이 django에서 받아오는 테이블

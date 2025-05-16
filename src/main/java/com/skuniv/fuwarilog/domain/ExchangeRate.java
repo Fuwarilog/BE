@@ -23,7 +23,7 @@ public class ExchangeRate extends BaseEntity {
     @JoinColumn(name="currency_id")
     private Currency currency;
 
-    @Column(name="base_currency")
+    @Column(name="base_currency") // 기준 통화 default 혹은 삭제
     private String baseCurrency;
 
     @Column(name="rate_value")
