@@ -102,4 +102,14 @@ public class AuthService {
 
         return ResponseEntity.ok(accessCookie);
     }
+
+
+    public void invalidateCookie(String name, HttpServletResponse response) {
+        Cookie cookie = new Cookie(name, null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+    }
 }
