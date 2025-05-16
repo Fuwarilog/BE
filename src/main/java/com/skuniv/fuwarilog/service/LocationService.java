@@ -97,6 +97,7 @@ public class LocationService {
         locationRepository.save(location);
     }
 
+    // 다이어리에 넣을지 보류
     public LocationResponse.RouteDTO getRoute(Long userId, LocationRequest.RouteReqDTO dto) {
         URI uri = UriComponentsBuilder.fromHttpUrl("https://maps.googleapis.com/maps/api/directions/json")
                 .queryParam("origin", dto.getOrigin())

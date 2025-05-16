@@ -37,6 +37,6 @@ public class Location extends BaseEntity {
     @Column(name = "bookmarked")
     private boolean bookmarked;
 
-    @Column(name = "searched_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime searchedAt;
+    @Column(name = "bookmarked_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime bookmarkedAt;
 }
