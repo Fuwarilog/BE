@@ -44,4 +44,5 @@ public class Location extends BaseEntity {
 
     @Column(name = "trip_date")
     private LocalDate tripDate;
+
 }

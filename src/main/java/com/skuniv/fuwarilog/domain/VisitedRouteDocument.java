@@ -1,13 +1,11 @@
 package com.skuniv.fuwarilog.domain;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Document(collection = "visited_routes")
 @Getter
