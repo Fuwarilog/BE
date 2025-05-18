@@ -31,6 +31,11 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private UserRepository userRepository;
 
+    /**
+     * @implSpec 사용자 정보 반환
+     * @param id 사용자 고유 번호
+     * @return user 사용자 정보 반환 DTO
+     */
     @Transactional
     public UserResponse.UserInfoDTO findUserInfo(Long id) {
         User user = userRepository.findById(id)
@@ -39,6 +44,12 @@ public class UserService {
         return UserResponse.UserInfoDTO.from(user);
     }
 
+    /**
+     * @implSpec 사용자 정보 수정
+     * @param userId 사용자 고유 번호
+     * @param request 사용자 정보 수정 요청 DTO
+     * @return user 사용자 정보 수정 반환 DTO
+     */
     @Transactional
     public UserResponse.UserInfoDTO editUserInfo(Long userId, UserRequest.UserInfoDTO request) {
         User user = userRepository.findById(userId)

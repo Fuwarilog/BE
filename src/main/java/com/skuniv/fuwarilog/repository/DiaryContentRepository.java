@@ -7,5 +7,5 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 public interface DiaryContentRepository extends MongoRepository<DiaryContent, String> {
-    Optional<DiaryContent> findByUserIdAndTripDate(Long userId, LocalDate tripDate);
+    Optional<DiaryContent> findByUserIdAndDiaryListId(Long userId, Long diaryListId);
 }
