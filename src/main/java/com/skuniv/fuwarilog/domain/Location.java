@@ -3,6 +3,8 @@ package com.skuniv.fuwarilog.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -39,4 +41,7 @@ public class Location extends BaseEntity {
 
     @Column(name = "bookmarked_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime bookmarkedAt;
+
+    @Column(name = "trip_date")
+    private LocalDate tripDate;
 }

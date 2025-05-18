@@ -18,18 +18,18 @@ public class DiaryContent {
     @Id
     private String id;
 
+    @Field("user_id")
+    private long userId;
+
     @Field("list_id")
     private long diaryListId;
+
+    @Field("trip_date")
+    private LocalDate tripDate;
 
     @Field("content")
     private String content;
 
     @Field("image_urls")
     private List<String> imageUrls;
-
-    @Field("created_at")
-    private LocalDate createdAt;
-
-    @Field("updated_at")
-    private LocalDate updatedAt;
 }
