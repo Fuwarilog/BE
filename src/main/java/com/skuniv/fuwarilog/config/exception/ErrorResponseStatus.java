@@ -21,7 +21,8 @@ public enum ErrorResponseStatus {
     USER_NOT_FOUND(4003, "사용자를 찾을 수 없습니다."),
     TRIP_NOT_FOUND(4005, "여행일정을 찾을 수 없습니다."),
     NOT_EXIST_DIARYLIST(4006, "다이어리를 찾을 수 없습니다."),
-    NOT_FOUND_LOCATION(4007, "해당 장소를 찾을 수 없습니다.");
+    NOT_FOUND_LOCATION(4007, "해당 장소를 찾을 수 없습니다."),
+    NOT_EXIST_DIARYCONTENT(4008, "다이어리 내용을 찾을 수 없습니다.");
 
     private final int code;
     private final String message;

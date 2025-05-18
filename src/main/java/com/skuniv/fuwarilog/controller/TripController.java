@@ -7,7 +7,6 @@ import com.skuniv.fuwarilog.domain.Trip;
 import com.skuniv.fuwarilog.dto.TripRequest;
 import com.skuniv.fuwarilog.dto.TripResponse;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
-import com.skuniv.fuwarilog.service.DiaryService;
 import com.skuniv.fuwarilog.service.TripService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
