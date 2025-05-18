@@ -5,6 +5,10 @@ jwt:
   secret: ${JWT_SECRET}
   token-validity-in-seconds: 86400000
 
+google:
+  maps:
+    key: ${MAP_API_KEY}
+
 spring:
   application:
     name: fuwarilog
@@ -13,6 +17,17 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+  data:
+    mongodb:
+      url: mongodb+srv://${MONGO_USER}:${MONGO_PW}@fuwarilog.ttscmet.mongodb.net/${MONGO_DB}?retryWrites=true&w=majority&appName=fuwarilog
   security:
     user:
       name: ${NAME}
@@ -33,14 +48,6 @@ spring:
             authorization-uri: https://accounts.google.com/o/oauth2/auth
             token-uri: https://oauth2.googleapis.com/token
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
 
   kafka:
     bootstrap-servers: localhost:9092
