@@ -6,23 +6,16 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-public class LocationRequest {
+import java.time.LocalDate;
 
-    @Getter
-    @Setter
-    @Data
-    @Schema(title = "REQ 1: 경로 탐색 DTO")
-    public static class RouteReqDTO {
-        String origin;
-        String destination;
-    }
+public class LocationRequest {
 
     @Data
     @Builder
     @Getter
     @Setter
-    @Schema(title = "REQ 2: 지도 북마크 DTO")
-    public static class MapBookmarkReqDTO {
+    @Schema(title = "REQ 1: 지도 북마크 DTO")
+    public static class LocationBookmarkReqDTO {
         String name;
         double latitude;
         double longitude;
@@ -33,7 +26,7 @@ public class LocationRequest {
     @Setter
     @Builder
     @Data
-    @Schema(title = "REQ 3: 현재 위치 DTO")
+    @Schema(title = "REQ 2: 현재 위치 DTO")
     public static class LocationReqDTO {
         double latitude;
         double longitude;
