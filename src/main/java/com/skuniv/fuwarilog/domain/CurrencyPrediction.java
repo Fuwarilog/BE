@@ -22,10 +22,6 @@ public class CurrencyPrediction extends BaseEntity {
     private long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="currency_id")
-    private Currency currency;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="trip_id")
     private Trip trip;
 
@@ -36,4 +32,3 @@ public class CurrencyPrediction extends BaseEntity {
     @JsonFormat(pattern = "yyyy-mm-dd HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime predictDate;
 }
-// 예측 부분이 django에서 받아오는 테이블
