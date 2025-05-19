@@ -61,6 +61,10 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       bootstrap-servers: localhost:9092
 
+exchange:
+  api:
+    key: ${EXCHANGE_API_KEY}
+
 management:
   endpoints:
     web:

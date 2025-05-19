@@ -7,10 +7,9 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Builder
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
 @AllArgsConstructor
 public class ExchangeRate extends BaseEntity {
 
@@ -19,19 +18,14 @@ public class ExchangeRate extends BaseEntity {
     @Column(name="exchangerate_id")
     private long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="currency_id")
-    private Currency currency;
+    @Column(name="cur_unit")
+    private String curUnit;
 
-    @Column(name="base_currency") // 기준 통화 default 혹은 삭제
-    private String baseCurrency;
-
-    @Column(name="rate_value")
-    private double rateValue;
+    @Column(name="cur_nm")
+    private String curNm;
+    @Column(name = "deal_bas_r")
+    private Double dealBasR;
 
     @Column(name="timestamp")
     private LocalDateTime timestamp;
-
-    @Column(name="percent_change")
-    private double percentChange;
 }
