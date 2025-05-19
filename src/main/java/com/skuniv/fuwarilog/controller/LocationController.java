@@ -4,6 +4,8 @@ import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.dto.LocationRequest;
 import com.skuniv.fuwarilog.dto.LocationResponse;
+import com.skuniv.fuwarilog.dto.VisitedRouteDocumentRequest;
+import com.skuniv.fuwarilog.dto.VisitedRouteDocumentResponse;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.LocationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,28 +54,40 @@ public class LocationController {
     }
 
     @PostMapping("/bookmark")
-    @Operation(summary = "검색/북마크 장소 저장 API", description = "장소 기록 및 북마크 저장")
+    @Operation(summary = "북마크 장소 저장 API", description = "북마크 저장")
     public ResponseEntity<Void> savePlace(
             @RequestHeader("Authorization") String token,
-            @RequestBody LocationRequest.MapBookmarkReqDTO dto) {
+            @RequestBody LocationRequest.LocationBookmarkReqDTO dto) {
         // 1. 토큰 확인
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
         Long userId = jwtTokenProvider.getUserId(token);
 
-        locationService.savePlace(userId, dto);
+        locationService.saveBookmark(userId, dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/bookmark/{locationId}")
+    @Operation(summary = "북마크 삭제 API", description = "북마크 id 삭제 요청 시 성공 반환")
+    public ResponseEntity<Void> deleteBookmark(@PathVariable Long locationId,
+                                               @RequestHeader("Authorization") String token) {
+        // 1. 토큰 확인
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
+
+        Long userId = jwtTokenProvider.getUserId(token);
+        locationService.deleteBookmark(userId, locationId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/route")
     @Operation(summary = "경로 탐색 API", description = "출발지, 목적지 입력 기반 경로 정보 반환")
-    public ResponseEntity<LocationResponse.RouteDTO> saveRoute(
+    public ResponseEntity<VisitedRouteDocumentResponse.RouteDTO> saveRoute(
             @RequestHeader("Authorization") String token,
-            @RequestBody LocationRequest.RouteReqDTO dto) {
+            @RequestBody VisitedRouteDocumentRequest.RouteRequestDTO dto) {
         // 1. 토큰 확인
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
         Long userId = jwtTokenProvider.getUserId(token);
 
-        LocationResponse.RouteDTO result = locationService.getRoute(userId, dto);
+        VisitedRouteDocumentResponse.RouteDTO result = locationService.getRoute(userId, dto);
         return ResponseEntity.ok(result);
     }
 }

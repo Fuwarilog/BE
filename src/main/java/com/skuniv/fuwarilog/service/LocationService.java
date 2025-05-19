@@ -2,13 +2,12 @@ package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.domain.Location;
-import com.skuniv.fuwarilog.domain.User;
+import com.skuniv.fuwarilog.domain.*;
 import com.skuniv.fuwarilog.dto.LocationRequest;
 import com.skuniv.fuwarilog.dto.LocationResponse;
-import com.skuniv.fuwarilog.repository.LocationRepository;
-import com.skuniv.fuwarilog.repository.UserRepository;
-import lombok.AllArgsConstructor;
+import com.skuniv.fuwarilog.dto.VisitedRouteDocumentRequest;
+import com.skuniv.fuwarilog.dto.VisitedRouteDocumentResponse;
+import com.skuniv.fuwarilog.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,6 +17,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -28,10 +29,19 @@ public class LocationService {
     private final RestTemplate restTemplate;
     private final UserRepository userRepository;
     private final LocationRepository locationRepository;
+    private final DiaryContentRepository diaryContentRepository;
+    private final DiaryListRepository diaryListRepository;
+    private final VisitedRouteRepository visitedRouteRepository;
 
     @Value("${google.maps.key}")
     private String apiKey;
 
+    /**
+     * @implSpec 사용자 현재 위치 반환
+     * @param userId 사용자 고유 번호
+     * @param locateDto 위치 요청 값(위도, 경도)
+     * @return address 주소, locateDto.getLatitude() 위도, locateDto.getLongitude()) 경도
+     */
     public LocationResponse.CurrentLocationDTO getCurrentLocation(Long userId, LocationRequest.LocationReqDTO locateDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
@@ -57,6 +67,11 @@ public class LocationService {
         }
     }
 
+    /**
+     * @implSpec 검색어에 따른 장소 리스트 반환
+     * @param keyword 검색 단어
+     * @return places 장소명, 주소, 위치
+     */
     public List<LocationResponse.PlaceDTO> searchPlaces(String keyword) {
         URI uri = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/place/textsearch/json")
                 .queryParam("query", keyword)
@@ -83,7 +98,12 @@ public class LocationService {
         return places;
     }
 
-    public void savePlace(Long userId, LocationRequest.MapBookmarkReqDTO dto) {
+    /**
+     * @implSpec 장소 북마크로 저장
+     * @param userId 사용자 고유 번호
+     * @param dto 북마크 요청 DTO
+     */
+    public void saveBookmark(Long userId, LocationRequest.LocationBookmarkReqDTO dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
@@ -92,40 +112,100 @@ public class LocationService {
                 .placeName(dto.getName())
                 .latitude(dto.getLatitude())
                 .longitude(dto.getLongitude())
-                .bookmarked(dto.isBookmarked())
+                .bookmarked(true)
+                .bookmarkedAt(LocalDateTime.now())
                 .build();
         locationRepository.save(location);
-    }
 
-    public LocationResponse.RouteDTO getRoute(Long userId, LocationRequest.RouteReqDTO dto) {
-        URI uri = UriComponentsBuilder.fromHttpUrl("https://maps.googleapis.com/maps/api/directions/json")
-                .queryParam("origin", dto.getOrigin())
-                .queryParam("destination", dto.getDestination())
-                .queryParam("key", apiKey)
-                .build()
-                .toUri();
+        // 다이어리 내용에 태그 삽입 로직
+        Optional<DiaryContent> contentOpt =
+                diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
 
-        Map<String, Object> response = restTemplate.getForObject(uri, Map.class);
-        List<Map<String, Object>> routes = (List<Map<String, Object>>) response.get("routes");
+        if (contentOpt.isPresent()) {
+            DiaryContent content = contentOpt.get();
+            String currentContent = content.getContent();
+            DiaryList list = diaryListRepository.findById(content.getDiaryListId())
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
-        if (routes != null && !routes.isEmpty()) {
-            Map<String, Object> firstRoute = routes.get(0);
-            List<Map<String, Object>> legs = (List<Map<String, Object>>) firstRoute.get("legs");
-            if (!legs.isEmpty()) {
-                Map<String, Object> leg = legs.get(0);
-                String duration = ((Map<String, Object>) leg.get("duration")).get("text").toString();
-                String distance = ((Map<String, Object>) leg.get("distance")).get("text").toString();
-
-                List<Map<String, Object>> steps = (List<Map<String, Object>>) leg.get("steps");
-                List<String> instructions = new ArrayList<>();
-                for (Map<String, Object> step : steps) {
-                    instructions.add((String) step.get("html_instructions"));
-                }
-
-                return new LocationResponse.RouteDTO(duration, distance, instructions);
+            // 이미 존재하는 태그인지 확인
+            String tagToAdd = "#" + location.getPlaceName().replaceAll("\\s+", "");
+            if (!currentContent.contains(tagToAdd)) {
+                String updatedContent = currentContent + "\n" + tagToAdd;
+                content.setContent(updatedContent);
+                list.setUpdatedAt(LocalDateTime.now()); // diarycontent가 아닌 DiaryList의 uodatedAt을 업데이트 해야한다.
+                diaryContentRepository.save(content);
             }
         }
+    }
 
-        return new LocationResponse.RouteDTO("N/A", "N/A", Collections.emptyList());
+    public void deleteBookmark(Long userId, Long locationId) {
+        Location location = locationRepository.findByIdAndUserId(locationId, userId);
+
+        location.setBookmarked(false);
+        location.setBookmarkedAt(null);
+        locationRepository.save(location);
+
+        // 다이어리에서 태그 제거
+        Optional<DiaryContent> contentOpt =
+                diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
+
+        if (contentOpt.isPresent()) {
+            DiaryContent content = contentOpt.get();
+            String currentContent = content.getContent();
+            DiaryList list = diaryListRepository.findById(content.getDiaryListId())
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+
+            String tagToRemove = "#" + location.getPlaceName().replaceAll("\\s+", "");
+            String updatedContent = currentContent.replace(tagToRemove, "").replaceAll("(?m)^\\s*$[\r\n]+", ""); // 빈 줄 정리
+            content.setContent(updatedContent.trim());
+            list.setUpdatedAt(LocalDateTime.now());
+            diaryContentRepository.save(content);
+        }
+    }
+
+    /**
+     * @implSpec 경로 탐색 결과 반환
+     * @param userId 사용자 고유 번호
+     * @param dto 경로 탐색 요청 DTO
+     * @return duration, distance, instructions 경로 탐색 값 반환
+     */
+    public VisitedRouteDocumentResponse.RouteDTO getRoute(Long userId, VisitedRouteDocumentRequest.RouteRequestDTO dto) {
+        String url = UriComponentsBuilder.fromHttpUrl("https://maps.googleapis.com/maps/api/directions/json")
+                .queryParam("origin", dto.getOrigin())
+                .queryParam("destination", dto.getDestination())
+                .queryParam("mode", "transit")
+                .queryParam("key", apiKey)
+                .toUriString();
+
+        Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+
+        if (response == null || !"OK".equals(response.get("status"))) {
+            throw new RuntimeException("Google Directions API 호출 실패: " + response);
+        }
+
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) response.get("routes");
+        Map<String, Object> route = routes.get(0);
+        Map<String, Object> leg = ((List<Map<String, Object>>) route.get("legs")).get(0);
+
+        String distanceText = ((Map<String, Object>) leg.get("distance")).get("text").toString();
+        int distanceValue = (int) ((Map<String, Object>) leg.get("distance")).get("value");
+
+        String durationText = ((Map<String, Object>) leg.get("duration")).get("text").toString();
+        int durationValue = (int) ((Map<String, Object>) leg.get("duration")).get("value");
+
+        // MongoDB 저장
+        VisitedRouteDocument routeDoc = VisitedRouteDocument.builder()
+                .userId(userId)
+                .origin(dto.getOrigin())
+                .destination(dto.getDestination())
+                .distanceText(distanceText)
+                .distanceValue(distanceValue)
+                .durationText(durationText)
+                .durationValue(durationValue)
+                .tripDate(dto.getTripDate())
+                .build();
+
+        visitedRouteRepository.save(routeDoc);
+        return new VisitedRouteDocumentResponse.RouteDTO(distanceText, durationText, dto.getOrigin(), dto.getDestination());
     }
 }
