@@ -18,6 +18,6 @@ public class ExchangeRateService {
     @Scheduled(cron = "0 0 0 * * ?")
     public void deleteOldRates() {
         LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
-        exchangeRateRepository.deleteByDateBefore(threeMonthsAgo);
+        exchangeRateRepository.deleteByPredictDateBefore(threeMonthsAgo);
     }
 }

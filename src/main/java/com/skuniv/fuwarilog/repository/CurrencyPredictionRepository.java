@@ -8,5 +8,5 @@ import java.time.LocalDate;
 
 @Repository
 public interface CurrencyPredictionRepository extends JpaRepository<CurrencyPrediction, Long> {
-    void deleteByDateBefore(LocalDate date);
+    void deleteByPredictDateBefore(LocalDate date);
 }
