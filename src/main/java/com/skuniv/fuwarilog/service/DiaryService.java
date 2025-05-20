@@ -2,21 +2,22 @@ package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
+import com.skuniv.fuwarilog.domain.Diary;
 import com.skuniv.fuwarilog.domain.DiaryContent;
 import com.skuniv.fuwarilog.domain.DiaryList;
-import com.skuniv.fuwarilog.domain.Location;
 import com.skuniv.fuwarilog.dto.DiaryContentRequest;
+import com.skuniv.fuwarilog.dto.DiaryResponse;
 import com.skuniv.fuwarilog.repository.DiaryContentRepository;
 import com.skuniv.fuwarilog.repository.DiaryListRepository;
-import com.skuniv.fuwarilog.repository.LocationRepository;
+import com.skuniv.fuwarilog.repository.DiaryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +25,18 @@ public class DiaryService {
 
     private final DiaryContentRepository diaryContentRepository;
     private final DiaryListRepository diaryListRepository;
-    private final LocationRepository locationRepository;
+    private final DiaryRepository diaryRepository;
+
+    /**
+     * @implSpec 다이어리 폴더 조회
+     * @param userId 사용자 고유 번호
+     */
+    public List<DiaryResponse.DiaryResDTO> getAllDiaries(Long userId) {
+        List<Diary> diaries = diaryRepository.findAllUserId(userId);
+        return diaries.stream()
+                .map(DiaryResponse.DiaryResDTO::from)
+                .collect(Collectors.toList());
+    }
 
     /**
      * @implSpec 다이어리 내용 저장 및 수정
