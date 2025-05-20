@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -75,7 +76,7 @@ public class DiaryService {
      * @param diaryListId 다이어리 고유 번호
      * @param dto 다이어리 고유번호 내용
      */
-    public DiaryContent saveOrUpdateDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId) {
+    public DiaryContent saveOrUpdateDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image) {
         Optional<DiaryContent> existing = diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId);
 
         String originalContent = dto.getContent();

@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -57,12 +58,13 @@ public class DiaryController {
     public ResponseEntity<?> saveContent(
             @RequestHeader("Authorization") String token,
             @RequestParam(required = true) Long diaryListId,
-            @RequestBody DiaryContentRequest.ContentDTO dto) {
+            @RequestBody DiaryContentRequest.ContentDTO dto,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
 
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
 
         Long userId = jwtTokenProvider.getUserId(token);
-        DiaryContent saved = diaryService.saveOrUpdateDiaryContent(dto, diaryListId, userId);
+        DiaryContent saved = diaryService.saveOrUpdateDiaryContent(dto, diaryListId, userId, image);
         return ResponseEntity.ok(saved);
     }
 
