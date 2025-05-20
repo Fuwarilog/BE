@@ -77,7 +77,15 @@ public class TripService {
             diaryListRepository.save(newDiaries);
         }
 
-        return TripResponse.TripInfoDTO.from(newTrip);
+        return TripResponse.TripInfoDTO.builder()
+                .tripId(newTrip.getId())
+                .title(newTrip.getTitle())
+                .description(newTrip.getDescription())
+                .startDate(newTrip.getStartDate())
+                .endDate(newTrip.getEndDate())
+                .country(newTrip.getCountry())
+                .eventId(newTrip.getGoogleEventId())
+                .build();
     }
 
     /**
@@ -179,6 +187,14 @@ public class TripService {
             }
         }
 
-        return TripResponse.TripInfoDTO.from(trip);
+        return TripResponse.TripInfoDTO.builder()
+                .tripId(trip.getId())
+                .title(trip.getTitle())
+                .country(trip.getCountry())
+                .eventId(trip.getGoogleEventId())
+                .description(trip.getDescription())
+                .startDate(trip.getStartDate())
+                .endDate(trip.getEndDate())
+                .build();
     }
 }

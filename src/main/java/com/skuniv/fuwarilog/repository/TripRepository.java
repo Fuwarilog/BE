@@ -13,4 +13,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     List<Trip> findAllByUser(User user);
 
     List<Trip> findAllById(Long tripId);
+
+    List<Trip> findAllByUserId(Long userId);
 }
