@@ -92,18 +92,17 @@ public class TripController {
     }
 
     @GetMapping("/event/{id}")
-    @Operation(summary = "일정 조회 API", description = " 여행ID/날짜 입력 시 해당 일정의 여행일정 조회 - 조건이 없으면 사용자의 모든 일정 반환")
-    public ResponseEntity<Optional<Trip>> getEvent(
+    @Operation(summary = "일정 조회 API", description = "여행ID/날짜 입력 시 해당 일정의 여행일정 조회 - 조건이 없으면 사용자의 모든 일정 반환")
+    public ResponseEntity<List<Trip>> getEvent(
             @RequestHeader("Authorization") String token,
-            @RequestParam(required = false) Long tripId,
-            @RequestParam(required = false) String date) {
+            @RequestParam(required = false) Long tripId) {
 
         // 1. 토큰 확인
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
 
         // 2. 토큰 -> 사용자 아이디
         Long userId = jwtTokenProvider.getUserId(token);
-        Optional<Trip> events = tripService.getEvents(userId, tripId, date);
+        List<Trip> events = tripService.getEvents(userId, tripId);
         return ResponseEntity.ok(events);
     }
 
@@ -111,7 +110,7 @@ public class TripController {
     @Operation(summary = "특정 여행의 다이어리 조회 API", description = "여행ID 입력 시 해당 일정의 다이어리 목록 조회")
     public ResponseEntity<List<Diary>> getDiaries(
             @RequestHeader("Authorization") String token,
-            @RequestParam(required = false) Long tripId) {
+            @RequestParam(required = true) Long tripId) {
 
         // 1. 토큰 확인
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }

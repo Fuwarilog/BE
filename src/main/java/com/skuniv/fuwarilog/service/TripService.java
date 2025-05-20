@@ -94,26 +94,21 @@ public class TripService {
     /**
      * @implSpec 특정 날짜의 서버 Trip 데이터 조회
      * @param tripId 특정 여행일정 아이디
-     * @param date String 형식으로 날짜 작성 ex) yyyy-MM-dd
      * @return List<Trip> 날짜에 대한 여행일정을 반환
      * */
-    public Optional<Trip> getEvents(Long userId, Long tripId, String date) {
+    public List<Trip> getEvents(Long userId, Long tripId) {
         // 1. 여행 리스트 객체 생성
-        Optional<Trip> tripList;
+        List<Trip> tripList;
 
         // 2. 사용자 존재 확인
         User user =  userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
         // 3. tripId & date값이 있느냐 없느냐에 따라 달라짐
-        if (tripId != null && date != null) {
-            tripList = tripRepository.findAllByUser(user);
-        } else if (tripId == null && date != null) {
-            tripList = tripRepository.findAllByStartDate(LocalDate.parse(date));
-        } else if (tripId != null && date == null) {
-            tripList = tripRepository.findById(tripId);
+        if (tripId != null) {
+            tripList = tripRepository.findAllById(tripId);
         } else {
-            tripList = tripRepository.findByIdAndStartDate(tripId, LocalDate.parse(date));
+            tripList = tripRepository.findAllByUser(user);
         }
 
         return tripList;
@@ -137,6 +132,13 @@ public class TripService {
         return diaryRepository.findAllByTripId(tripId);
     }
 
+    /**
+     * @implSpec 특정 여행에 대한 다이어리 조회
+     * @param userId 사용자 아이디
+     * @param tripId 여행일정 아이디
+     * @param infoDTO 여행 데이터 DTO
+     * @return TripResponse.TripInfoDTO 수정된 일정값 반환
+     * */
     public TripResponse.TripInfoDTO editEvent(Long userId, Long tripId, TripRequest.TripInfoDTO infoDTO) {
         // 1. 사용자 존재 확인
         User user =  userRepository.findById(userId)
@@ -146,13 +148,41 @@ public class TripService {
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.TRIP_NOT_FOUND));
 
-        trip.setTitle(infoDTO.getTitle());
-        trip.setDescription(infoDTO.getDescription());
-        trip.setStartDate(infoDTO.getStartDate());
-        trip.setEndDate(infoDTO.getEndDate());
-        trip.setCountry(infoDTO.getCountry());
+        // 3. 다이어리 확인
+        Diary diary = diaryRepository.findByTrip(trip)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.DIARY_NOT_FOUND));
 
-        trip = tripRepository.save(trip);
+        // 4. 날짜 변경 시 다이어리 폴더 및 리스트 업데이트
+        if(infoDTO.getStartDate().isEqual(trip.getStartDate()) && infoDTO.getEndDate().isEqual(trip.getEndDate())) {
+            trip.setTitle(infoDTO.getTitle());
+            trip.setDescription(infoDTO.getDescription());
+            trip.setCountry(infoDTO.getCountry());
+            trip = tripRepository.save(trip);
+
+        } else {
+
+            trip.setTitle(infoDTO.getTitle());
+            trip.setDescription(infoDTO.getDescription());
+            trip.setStartDate(infoDTO.getStartDate());
+            trip.setEndDate(infoDTO.getEndDate());
+            trip.setCountry(infoDTO.getCountry());
+            trip = tripRepository.save(trip);
+
+            diary.setTrip(trip);
+            diary.setTitle(infoDTO.getTitle());
+            diary.setStartDate(infoDTO.getStartDate());
+            diary.setEndDate(infoDTO.getEndDate());
+            diary = diaryRepository.save(diary);
+
+            // 여행일정 마다 다이어리 생성
+            for (LocalDate d=infoDTO.getStartDate(); d.compareTo(infoDTO.getEndDate()) <= 0; d = d.plusDays(1)) {
+                DiaryList newDiaries = DiaryList.builder()
+                        .diary(diary)
+                        .date(d)
+                        .build();
+                diaryListRepository.save(newDiaries);
+            }
+        }
 
         return TripResponse.TripInfoDTO.from(trip);
     }
