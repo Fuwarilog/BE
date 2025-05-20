@@ -5,12 +5,17 @@ import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.Diary;
 import com.skuniv.fuwarilog.domain.DiaryContent;
 import com.skuniv.fuwarilog.domain.DiaryList;
+import com.skuniv.fuwarilog.domain.Trip;
 import com.skuniv.fuwarilog.dto.DiaryContentRequest;
+import com.skuniv.fuwarilog.dto.DiaryListResponse;
 import com.skuniv.fuwarilog.dto.DiaryResponse;
+import com.skuniv.fuwarilog.dto.TripResponse;
 import com.skuniv.fuwarilog.repository.DiaryContentRepository;
 import com.skuniv.fuwarilog.repository.DiaryListRepository;
 import com.skuniv.fuwarilog.repository.DiaryRepository;
+import com.skuniv.fuwarilog.repository.TripRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,15 +31,41 @@ public class DiaryService {
     private final DiaryContentRepository diaryContentRepository;
     private final DiaryListRepository diaryListRepository;
     private final DiaryRepository diaryRepository;
+    private final TripRepository tripRepository;
 
     /**
      * @implSpec 다이어리 폴더 조회
      * @param userId 사용자 고유 번호
      */
-    public List<DiaryResponse.DiaryResDTO> getAllDiaries(Long userId) {
-        List<Diary> diaries = diaryRepository.findAllUserId(userId);
-        return diaries.stream()
-                .map(DiaryResponse.DiaryResDTO::from)
+    public List<TripResponse.TripInfoDTO> getAllDiaries(Long userId) {
+        List<Trip> trips = tripRepository.findAllByUserId(userId);
+
+        return trips.stream()
+                .map(trip -> {
+                    return TripResponse.TripInfoDTO.builder()
+                            .tripId(trip.getId())
+                            .title(trip.getTitle())
+                            .country(trip.getCountry())
+                            .eventId(trip.getGoogleEventId())
+                            .description(trip.getDescription())
+                            .startDate(trip.getStartDate())
+                            .endDate(trip.getEndDate())
+                            .diaries(trip.getDiaries().stream()
+                                    .map(DiaryResponse.DiaryResDTO::from)
+                                    .collect(Collectors.toList()))
+                            .build();
+                }).collect(Collectors.toList());
+    }
+
+    /**
+     * @implSpec 다이어리 폴더내 리스트 조회
+     * @param userId 사용자 고유 번호
+     */
+    public List<DiaryListResponse.DiaryListResDTO> getAllDiaryList(Long userId, Long diaryId) {
+
+        List<DiaryList> diaryList = diaryListRepository.findAllByDiaryId(diaryId);
+        return diaryList.stream()
+                .map(DiaryListResponse.DiaryListResDTO::from)
                 .collect(Collectors.toList());
     }
 
@@ -99,5 +130,4 @@ public class DiaryService {
         list.setUpdatedAt(LocalDateTime.now());
         diaryContentRepository.save(contentDoc);
     }
-
 }

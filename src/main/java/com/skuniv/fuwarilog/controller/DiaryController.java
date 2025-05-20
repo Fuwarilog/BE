@@ -5,7 +5,9 @@ import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.Diary;
 import com.skuniv.fuwarilog.domain.DiaryContent;
 import com.skuniv.fuwarilog.dto.DiaryContentRequest;
+import com.skuniv.fuwarilog.dto.DiaryListResponse;
 import com.skuniv.fuwarilog.dto.DiaryResponse;
+import com.skuniv.fuwarilog.dto.TripResponse;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,7 +28,7 @@ public class DiaryController {
 
     @GetMapping("/")
     @Operation(summary = "다이어리 폴더 조회 API", description = "사용자 id 입력 시 다이어리 폴더 조회")
-    public ResponseEntity<List<DiaryResponse.DiaryResDTO>> getAllDiaries(
+    public ResponseEntity<List<TripResponse.TripInfoDTO>> getAllDiaries(
             @RequestHeader("Authorization") String token) {
         // 1. 토큰 검증
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
@@ -36,10 +38,19 @@ public class DiaryController {
         return ResponseEntity.ok(diaryService.getAllDiaries(userId));
     }
 
-//
-//    @GetMapping("/list")
-//    @Operation(summary = "다이어리 폴더 내 리스트 조회", description = "사용자 id, 다이어리 폴더 id 입력 시 리스트 조회")
 
+    @GetMapping("/{diaryId}")
+    @Operation(summary = "다이어리 폴더 내 리스트 조회", description = "사용자 id, 다이어리 폴더 id 입력 시 리스트 조회")
+    public ResponseEntity<List<DiaryListResponse.DiaryListResDTO>> getAllDiaryList(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(required = true) Long diaryId) {
+        // 1. 토큰 검증
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
+
+        // 2. 사용자 고유 번호 추출
+        Long userId = jwtTokenProvider.getUserId(token);
+        return ResponseEntity.ok(diaryService.getAllDiaryList(userId, diaryId));
+    }
 
     @PostMapping("/list/content")
     @Operation(summary = "다이어리 내용 작성 API", description = "diaryListId, 내용 입력 시 작성 완료")
