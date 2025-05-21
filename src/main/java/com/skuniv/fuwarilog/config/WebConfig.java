@@ -28,10 +28,11 @@ public class WebConfig implements WebMvcConfigurer {
         converters.add(octetStreamReadMsgConverter);
     }
 
+    // 이미지 로컬, 접근 경로 설정
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/static/profile/")
-                .addResourceLocations("file:uploads/profile/");
+        registry.addResourceHandler("/static/profile/**", "/static/diary/**")
+                .addResourceLocations("file:uploads/profile/", "file:uploads/diary/");
     }
 
     @Bean
