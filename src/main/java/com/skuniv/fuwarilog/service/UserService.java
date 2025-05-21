@@ -12,15 +12,17 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -51,52 +53,41 @@ public class UserService {
      * @return user 사용자 정보 수정 반환 DTO
      */
     @Transactional
-    public UserResponse.UserInfoDTO editUserInfo(Long userId, UserRequest.UserInfoDTO request) {
+    public UserResponse.UserInfoDTO editUserInfo(Long userId, UserRequest.UserInfoDTO request, MultipartFile image) {
+        // 1. 사용자 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
-        if(Objects.equals(user.getProvider(), "google")) {
-            user.setName(request.getName());
-            user.setPictureUrl(request.getPictureUrl());
-            user = userRepository.save(user);
-
-        } else {
-            //validatePasswordStrength(request.getPassword());
-
-            if(passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-                throw new BadRequestException(ErrorResponseStatus.INVALID_SAME_PASSWORD);
-            }
-
-            String newPassword = passwordEncoder.encode(request.getPassword());
-            user.setName(request.getName());
-            user.setPassword(newPassword);
-            user.setPictureUrl(request.getPictureUrl());
-            user = userRepository.save(user);
+        // 2. 이미지 저장
+        String imageUrl = null;
+        if(image != null && !image.isEmpty()) {
+            imageUrl = storeProfileImage(image);
         }
+
+        user.setPictureUrl(imageUrl);
+        user.setName(request.getName());
+        user = userRepository.save(user);
 
         return UserResponse.UserInfoDTO.from(user);
     }
 
-    private void validatePasswordStrength(String password) {
-        String regex = "^(?=.*[A-Za-z])(?=.*\\\\d)(?=.*[@$!%*#?&])[A-Za-z\\\\d@$!%*#?&]{8,}$";
-        if(!password.matches(regex)) {
-            throw new BadRequestException(ErrorResponseStatus.INVALID_PASSWORD);
-        }
-    }
-
-    public String storeProfileImage(Long userId, MultipartFile image) {
+    private String storeProfileImage(MultipartFile image) {
         try {
             String uploadDir = "uploads/profile/";
             File profile_dir = new File(uploadDir);
-            if(!profile_dir.exists()) profile_dir.mkdir();
+            if(!profile_dir.exists()) profile_dir.mkdirs();
 
-            String filename = userId + "_" + System.currentTimeMillis() + "_" + image.getOriginalFilename();
+            String filename = UUID.randomUUID() + "_" + StringUtils.cleanPath(Objects.requireNonNull(image.getOriginalFilename()));
             Path filePath = Paths.get(uploadDir + filename);
             Files.write(filePath, image.getBytes());
 
-            return "/static/profile/" + filename;
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/static/profile/")
+                    .path(filename)
+                    .toUriString();
         } catch (IOException e) {
-            throw new RuntimeException("프로필 이미지 저장 실패", e);
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.SAVE_PROFILE_IMAGE_ERROR);
         }
     }
 }

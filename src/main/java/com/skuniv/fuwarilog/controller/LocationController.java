@@ -55,15 +55,17 @@ public class LocationController {
 
     @PostMapping("/bookmark")
     @Operation(summary = "북마크 장소 저장 API", description = "북마크 저장")
-    public ResponseEntity<Void> savePlace(
+    public ResponseEntity<LocationResponse.LocationInfoDTO> savePlace(
             @RequestHeader("Authorization") String token,
             @RequestBody LocationRequest.LocationBookmarkReqDTO dto) {
         // 1. 토큰 확인
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
+
+        // 2. 사용자 고유 번호 추출
         Long userId = jwtTokenProvider.getUserId(token);
 
-        locationService.saveBookmark(userId, dto);
-        return ResponseEntity.ok().build();
+        LocationResponse.LocationInfoDTO result = locationService.saveBookmark(userId, dto);
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/bookmark/{locationId}")
@@ -73,7 +75,9 @@ public class LocationController {
         // 1. 토큰 확인
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
 
+        // 2. 사용자 고유 번호 추출
         Long userId = jwtTokenProvider.getUserId(token);
+
         locationService.deleteBookmark(userId, locationId);
         return ResponseEntity.ok().build();
     }

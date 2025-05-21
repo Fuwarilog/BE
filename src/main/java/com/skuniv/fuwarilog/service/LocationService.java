@@ -103,10 +103,12 @@ public class LocationService {
      * @param userId 사용자 고유 번호
      * @param dto 북마크 요청 DTO
      */
-    public void saveBookmark(Long userId, LocationRequest.LocationBookmarkReqDTO dto) {
+    public LocationResponse.LocationInfoDTO saveBookmark(Long userId, LocationRequest.LocationBookmarkReqDTO dto) {
+        // 1. 사용자 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
+        // 2. 북마크 장소 추가
         Location location = Location.builder()
                 .user(user)
                 .placeName(dto.getName())
@@ -117,9 +119,8 @@ public class LocationService {
                 .build();
         locationRepository.save(location);
 
-        // 다이어리 내용에 태그 삽입 로직
-        Optional<DiaryContent> contentOpt =
-                diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
+        // 3. 다이어리 내용에 태그 삽입
+        Optional<DiaryContent> contentOpt = diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
 
         if (contentOpt.isPresent()) {
             DiaryContent content = contentOpt.get();
@@ -136,6 +137,7 @@ public class LocationService {
                 diaryContentRepository.save(content);
             }
         }
+        return LocationResponse.LocationInfoDTO.from(location);
     }
 
     public void deleteBookmark(Long userId, Long locationId) {

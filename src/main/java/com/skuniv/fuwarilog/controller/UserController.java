@@ -47,7 +47,7 @@ public class UserController {
     @Operation(summary = "내 정보 수정", description = "성공시 사용자 업데이트 정보 반환")
     public ResponseEntity<UserResponse.UserInfoDTO> updateUserInfo(
             @RequestHeader("Authorization") String token,
-            @RequestPart("user info") @Valid UserRequest.UserInfoDTO userDto,
+            @RequestPart(value = "userDto") @Valid UserRequest.UserInfoDTO userDto,
             @RequestPart(value = "image", required = false) MultipartFile image) {
 
         // 1. 토큰 확인
@@ -56,13 +56,7 @@ public class UserController {
         // 2. 토큰 -> 사용자 Id 반환
         Long userId = jwtTokenProvider.getUserId(token);
 
-        String imageUrl = null;
-        if(image != null && !image.isEmpty()) {
-            imageUrl = userService.storeProfileImage(userId, image);
-        }
-
-        userDto.setPictureUrl(imageUrl);
-        UserResponse.UserInfoDTO updateUser = userService.editUserInfo(userId, userDto);
+        UserResponse.UserInfoDTO updateUser = userService.editUserInfo(userId, userDto, image);
         return ResponseEntity.ok(updateUser);
     }
 }
