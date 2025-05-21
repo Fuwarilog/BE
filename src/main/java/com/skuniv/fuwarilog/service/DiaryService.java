@@ -2,7 +2,6 @@ package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.domain.Diary;
 import com.skuniv.fuwarilog.domain.DiaryContent;
 import com.skuniv.fuwarilog.domain.DiaryList;
 import com.skuniv.fuwarilog.domain.Trip;
@@ -12,14 +11,14 @@ import com.skuniv.fuwarilog.dto.DiaryResponse;
 import com.skuniv.fuwarilog.dto.TripResponse;
 import com.skuniv.fuwarilog.repository.DiaryContentRepository;
 import com.skuniv.fuwarilog.repository.DiaryListRepository;
-import com.skuniv.fuwarilog.repository.DiaryRepository;
 import com.skuniv.fuwarilog.repository.TripRepository;
-import jakarta.persistence.CollectionTable;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.common.errors.ResourceNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,12 +26,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DiaryService {
@@ -46,10 +43,10 @@ public class DiaryService {
      * @param userId 사용자 고유 번호
      */
     public List<TripResponse.TripInfoDTO> getAllDiaries(Long userId) {
-        List<Trip> trips = tripRepository.findAllByUserId(userId);
-
-        return trips.stream()
-                .map(trip -> {
+        try{
+            List<Trip> trips = tripRepository.findAllByUserId(userId);
+            return trips.stream()
+                    .map(trip -> {
                     return TripResponse.TripInfoDTO.builder()
                             .tripId(trip.getId())
                             .title(trip.getTitle())
@@ -63,31 +60,41 @@ public class DiaryService {
                                     .collect(Collectors.toList()))
                             .build();
                 }).collect(Collectors.toList());
+        } catch (Exception e){
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
+        }
     }
 
     /**
      * @implSpec 다이어리 폴더내 리스트 조회
      * @param userId 사용자 고유 번호
+     * @return result 다이어리 리스트 반환
      */
     public List<DiaryListResponse.DiaryListResDTO> getAllDiaryList(Long userId, Long diaryId, Boolean isPublic) {
 
-        List<DiaryListResponse.DiaryListResDTO> result;
+        try {
+            List<DiaryListResponse.DiaryListResDTO> result;
 
-        List<DiaryList> diaryList = diaryListRepository.findAllByDiaryId(diaryId);
+            List<DiaryList> diaryList = diaryListRepository.findAllByDiaryId(diaryId);
 
-        List<Boolean> isPublics = Arrays.asList(true, false);
+            List<Boolean> isPublics = Arrays.asList(true, false);
 
-        if (isPublic != null) {
-            result = diaryList.stream()
-                    .map(DiaryListResponse.DiaryListResDTO::from)
-                    .filter(diaryList1 -> isPublics.contains(diaryList1.getIsPublic()))
-                    .collect(Collectors.toList());
-        } else {
-            result = diaryList.stream()
-                    .map(DiaryListResponse.DiaryListResDTO::from)
-                    .collect(Collectors.toList());
+            if (isPublic != null) {
+                result = diaryList.stream()
+                        .map(DiaryListResponse.DiaryListResDTO::from)
+                        .filter(diaryList1 -> isPublics.contains(diaryList1.getIsPublic()))
+                        .collect(Collectors.toList());
+            } else {
+                result = diaryList.stream()
+                        .map(DiaryListResponse.DiaryListResDTO::from)
+                        .collect(Collectors.toList());
+            }
+            return result;
+        } catch (Exception e){
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
-        return result;
     }
 
     /**
@@ -97,26 +104,31 @@ public class DiaryService {
      * @param dto 다이어리 고유번호 내용
      */
     public DiaryContent createDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image) {
-        if(diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId).isPresent()) {
-            throw new BadRequestException(ErrorResponseStatus.ALREADY_EXIST_CONTENT);
+        try {
+            if (diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId).isPresent()) {
+                throw new BadRequestException(ErrorResponseStatus.ALREADY_EXIST_CONTENT);
+            }
+
+            DiaryList list = diaryListRepository.findById(diaryListId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+
+            DiaryContent content = DiaryContent.builder()
+                    .userId(userId)
+                    .diaryListId(diaryListId)
+                    .tripDate(list.getDate())
+                    .content(dto.getContent())
+                    .build();
+
+            if (image != null && !image.isEmpty()) {
+                String imageUrl = storeDiaryImage(image);
+                content.setImageUrls(List.of(imageUrl));
+            }
+
+            return diaryContentRepository.save(content);
+        } catch (Exception e){
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
         }
-
-        DiaryList list = diaryListRepository.findById(diaryListId)
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
-
-        DiaryContent content = DiaryContent.builder()
-                .userId(userId)
-                .diaryListId(diaryListId)
-                .tripDate(list.getDate())
-                .content(dto.getContent())
-                .build();
-
-        if(image != null && !image.isEmpty()) {
-            String imageUrl = storeDiaryImage(diaryListId, image);
-            content.setImageUrls(List.of(imageUrl));
-        }
-
-        return diaryContentRepository.save(content);
     }
 
 
@@ -127,32 +139,41 @@ public class DiaryService {
      * @param dto 다이어리 고유번호 내용
      */
     public DiaryContent editDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image) {
-        DiaryContent content = diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId)
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+        try {
+            DiaryContent content = diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
-        content.setContent(dto.getContent());
+            content.setContent(dto.getContent());
 
-        if (image != null && !image.isEmpty()) {
-            String imageUrl = storeDiaryImage(diaryListId, image);
-            content.setImageUrls(List.of(imageUrl));
+            if (image != null && !image.isEmpty()) {
+                String imageUrl = storeDiaryImage(image);
+                content.setImageUrls(List.of(imageUrl));
+            }
+
+            return diaryContentRepository.save(content);
+        } catch (Exception e){
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
         }
-
-        return diaryContentRepository.save(content);
     }
 
-    private String storeDiaryImage(Long diaryListId, MultipartFile image) {
+    private String storeDiaryImage(MultipartFile image) {
         try {
             String uploadDir = "uploads/diary/";
             File profile_dir = new File(uploadDir);
             if (!profile_dir.exists()) profile_dir.mkdir();
 
-            String filename = diaryListId + "_" + System.currentTimeMillis() + "_"  + image.getOriginalFilename();
+            String filename = UUID.randomUUID() + "_" + StringUtils.cleanPath(Objects.requireNonNull(image.getOriginalFilename()));
             Path filePath = Paths.get(uploadDir + filename);
             Files.write(filePath, image.getBytes());
 
-            return "/static/diary/" + filename;
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/static/diary/")
+                    .path(filename)
+                    .toUriString();
         } catch (IOException e) {
-            throw new BadRequestException(ErrorResponseStatus.INVALID_DIARY_IMAGE);
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.SVAE_DIARY_IMAGE_ERROR);
         }
     }
 
@@ -163,8 +184,13 @@ public class DiaryService {
      * @param diaryListId 다이어리 고유 번호
      */
     public DiaryContent getDiaryContent(Long userId, Long diaryListId) {
-        return diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId)
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
+        try {
+            return diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
+        } catch (Exception e){
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
+        }
     }
 
     /**
