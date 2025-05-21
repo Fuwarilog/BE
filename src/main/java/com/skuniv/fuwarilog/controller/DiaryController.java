@@ -13,14 +13,16 @@ import com.skuniv.fuwarilog.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/diaries")
+@RequestMapping("/api/v1/diaries")
 @Tag(name = "Diary API", description = "다이어리 관련 조회, 작성, 삭제 + 지도맵의 태그 관리")
 public class DiaryController {
     private final DiaryService diaryService;
@@ -43,27 +45,53 @@ public class DiaryController {
     @Operation(summary = "다이어리 폴더 내 리스트 조회", description = "사용자 id, 다이어리 폴더 id 입력 시 리스트 조회")
     public ResponseEntity<List<DiaryListResponse.DiaryListResDTO>> getAllDiaryList(
             @RequestHeader("Authorization") String token,
-            @RequestParam(required = true) Long diaryId) {
+            @RequestParam(required = true) Long diaryId,
+            @RequestParam(required = false) Boolean isPublic) {
+
         // 1. 토큰 검증
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
 
         // 2. 사용자 고유 번호 추출
         Long userId = jwtTokenProvider.getUserId(token);
-        return ResponseEntity.ok(diaryService.getAllDiaryList(userId, diaryId));
+        return ResponseEntity.ok(diaryService.getAllDiaryList(userId, diaryId, isPublic));
     }
 
-    @PostMapping("/list/content")
+    @PostMapping(value = "/content/{diaryListId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "다이어리 내용 작성 API", description = "diaryListId, 내용 입력 시 작성 완료")
-    public ResponseEntity<?> saveContent(
+    public ResponseEntity<?> createDiaryContent(
             @RequestHeader("Authorization") String token,
             @RequestParam(required = true) Long diaryListId,
-            @RequestBody DiaryContentRequest.ContentDTO dto) {
+            @RequestPart DiaryContentRequest.ContentDTO dto,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
 
+        // 1. 토큰 검증
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
 
+        // 2. 사용자 고유번호 추출
         Long userId = jwtTokenProvider.getUserId(token);
-        DiaryContent saved = diaryService.saveOrUpdateDiaryContent(dto, diaryListId, userId);
-        return ResponseEntity.ok(saved);
+
+        // 3. 내용 작성
+        DiaryContent result = diaryService.createDiaryContent(dto, diaryListId, userId, image);
+        return ResponseEntity.ok(result);
+    }
+
+    @PutMapping(value = "/content/{diaryListId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "다이어리 내용 수정 API", description = "diaryListId를 입력, 내용 입력 시 수정 완료")
+    public ResponseEntity<?> editDiaryContent(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(required = true) Long diaryListId,
+            @RequestPart DiaryContentRequest.ContentDTO dto,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+
+        // 1. 토큰 검증
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
+
+        // 2. 사용자 고유 번호 추출
+        Long userId = jwtTokenProvider.getUserId(token);
+
+        // 3. 내용 작성
+        DiaryContent result = diaryService.editDiaryContent(dto, diaryListId, userId, image);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/list/content")
@@ -72,18 +100,28 @@ public class DiaryController {
             @RequestHeader("Authorization") String token,
             @RequestParam Long diaryListId) {
 
+        // 1. 토큰 검증
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
+
         Long userId = jwtTokenProvider.getUserId(token);
         DiaryContent content = diaryService.getDiaryContent(userId, diaryListId);
         return ResponseEntity.ok(content);
     }
 
-    @DeleteMapping("/list/content/delete-tag")
+    @DeleteMapping("/list/content")
     @Operation(summary = "다이어리 내용 태그 삭제 API", description = "특정 태그String 입력 시 다이어리 내용의 해당 태그 삭제")
     public ResponseEntity<?> deleteTagFromContent(
+            @RequestHeader("Authorization") String token,
             @RequestParam String tag,
-            @RequestParam Long diaryListId,
-            @RequestParam Long userId) {
+            @RequestParam Long diaryListId) {
 
+        // 1. 토큰 검증
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
+
+        // 2. 사용자 고유 번호 추출
+        Long userId = jwtTokenProvider.getUserId(token);
+
+        // 3. 다이어리 내의 태그 삭제
         diaryService.removeTagFromContent(userId, diaryListId, tag);
         return ResponseEntity.ok("태그 삭제 완료");
     }
