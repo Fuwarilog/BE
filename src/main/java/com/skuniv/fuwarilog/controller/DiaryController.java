@@ -103,13 +103,20 @@ public class DiaryController {
         return ResponseEntity.ok(content);
     }
 
-    @DeleteMapping("/list/content/delete-tag")
+    @DeleteMapping("/list/content")
     @Operation(summary = "다이어리 내용 태그 삭제 API", description = "특정 태그String 입력 시 다이어리 내용의 해당 태그 삭제")
     public ResponseEntity<?> deleteTagFromContent(
+            @RequestHeader("Authorization") String token,
             @RequestParam String tag,
-            @RequestParam Long diaryListId,
-            @RequestParam Long userId) {
+            @RequestParam Long diaryListId) {
 
+        // 1. 토큰 검증
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
+
+        // 2. 사용자 고유 번호 추출
+        Long userId = jwtTokenProvider.getUserId(token);
+
+        // 3. 다이어리 내의 태그 삭제
         diaryService.removeTagFromContent(userId, diaryListId, tag);
         return ResponseEntity.ok("태그 삭제 완료");
     }
