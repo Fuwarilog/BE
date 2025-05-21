@@ -16,7 +16,9 @@ public enum ErrorResponseStatus {
     ALREADY_EXIST_CONTENT(2007, "이미 존재하는 다이어리 내용입니다."),
 
     RESPONSE_ERROR(3000, "값을 불러오는데 실패했습니다."),
-    INVALID_DIARY_IMAGE(3001, "다이어리 이미지 저장 실패"),
+    SVAE_DIARY_IMAGE_ERROR(3001, "다이어리 이미지 저장 실패"),
+    SAVE_PROFILE_IMAGE_ERROR(3002, "프로필 이미지 저장 실패"),
+    SAVE_DATA_ERROR(3003, " 값을 저장하는데 실패했습니다."),
 
     CREDENTIAL_NOT_FOUND(4000, "Credential 파일을 찾을 수 없습니다."),
     SECRET_FILE_NOT_FOUND(4001, "SECRET 파일을 찾을 수 없습니다."),
