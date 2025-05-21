@@ -13,8 +13,10 @@ public enum ErrorResponseStatus {
     INVALID_PASSWORD(2004, "비밀번호는 영문, 숫자, 기호로 이루어져야합니다."),
     INVALID_TOKEN(2005, "잘못된 인증 토큰입니다."),
     INVALID_SECRET_FILE(2006, "잘못된 SECRET 파일입니다."),
+    ALREADY_EXIST_CONTENT(2007, "이미 존재하는 다이어리 내용입니다."),
 
     RESPONSE_ERROR(3000, "값을 불러오는데 실패했습니다."),
+    INVALID_DIARY_IMAGE(3001, "다이어리 이미지 저장 실패"),
 
     CREDENTIAL_NOT_FOUND(4000, "Credential 파일을 찾을 수 없습니다."),
     SECRET_FILE_NOT_FOUND(4001, "SECRET 파일을 찾을 수 없습니다."),

@@ -20,6 +20,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +36,6 @@ public class DiaryService {
 
     private final DiaryContentRepository diaryContentRepository;
     private final DiaryListRepository diaryListRepository;
-    private final DiaryRepository diaryRepository;
     private final TripRepository tripRepository;
 
     /**
@@ -71,31 +75,69 @@ public class DiaryService {
     }
 
     /**
-     * @implSpec 다이어리 내용 저장 및 수정
+     * @implSpec 다이어리 내용 작성 기능
      * @param userId 사용자 고유 번호
      * @param diaryListId 다이어리 고유 번호
      * @param dto 다이어리 고유번호 내용
      */
-    public DiaryContent saveOrUpdateDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image) {
-        Optional<DiaryContent> existing = diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId);
+    public DiaryContent createDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image) {
+        if(diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId).isPresent()) {
+            throw new BadRequestException(ErrorResponseStatus.ALREADY_EXIST_CONTENT);
+        }
 
-        String originalContent = dto.getContent();
         DiaryList list = diaryListRepository.findById(diaryListId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
-        DiaryContent contentDoc = existing.orElse(
-                DiaryContent.builder()
-                        .userId(userId)
-                        .diaryListId(diaryListId)
-                        .content(originalContent)
-                        .build()
-        );
+        DiaryContent content = DiaryContent.builder()
+                .userId(userId)
+                .diaryListId(diaryListId)
+                .tripDate(list.getDate())
+                .content(dto.getContent())
+                .build();
 
-        contentDoc.setDiaryListId(diaryListId);
-        contentDoc.setContent(originalContent);
-        list.setUpdatedAt(LocalDateTime.now());
+        if(image != null && !image.isEmpty()) {
+            String imageUrl = storeDiaryImage(diaryListId, image);
+            content.setImageUrls(List.of(imageUrl));
+        }
 
-        return diaryContentRepository.save(contentDoc);
+        return diaryContentRepository.save(content);
+    }
+
+
+    /**
+     * @implSpec 다이어리 내용 수정 기능
+     * @param userId 사용자 고유 번호
+     * @param diaryListId 다이어리 고유 번호
+     * @param dto 다이어리 고유번호 내용
+     */
+    public DiaryContent editDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image) {
+        DiaryContent content = diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+
+        content.setContent(dto.getContent());
+
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = storeDiaryImage(diaryListId, image);
+            content.setImageUrls(List.of(imageUrl));
+        }
+
+        return diaryContentRepository.save(content);
+    }
+
+    private String storeDiaryImage(Long diaryListId, MultipartFile image) {
+        try {
+            String uploadDir = "uploads/diary/";
+            File profile_dir = new File(uploadDir);
+            if (!profile_dir.exists()) profile_dir.mkdir();
+
+            String filename = diaryListId + "_" + System.currentTimeMillis() + "_"  + image.getOriginalFilename();
+            Path filePath = Paths.get(uploadDir + filename);
+            Files.write(filePath, image.getBytes());
+
+            return "/static/diary/" + filename;
+        } catch (IOException e) {
+            throw new BadRequestException(ErrorResponseStatus.INVALID_DIARY_IMAGE);
+        }
     }
 
 

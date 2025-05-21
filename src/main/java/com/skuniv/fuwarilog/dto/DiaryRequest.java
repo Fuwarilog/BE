@@ -16,13 +16,13 @@ public class DiaryRequest {
     @Builder
     @Schema(title = "REQ 1: 다이어리 정보 데이터 DTO")
     public static class DiaryInfoDTO {
-        @Schema(name="title", description = "여행일정 제목" , example = "대만 여행")
+        @Schema(description = "여행일정 제목" , example = "대만 여행")
         String title;
 
-        @Schema(name="startDate", example = "yyyy-MM-dd")
+        @Schema(description = "여행 시작일", example = "yyyy-MM-dd")
         LocalDate startDate;
 
-        @Schema(name="endDate", example = "yyyy-MM-dd")
+        @Schema(description = "여행 종료일", example = "yyyy-MM-dd")
         LocalDate endDate;
     }
 }
