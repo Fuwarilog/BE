@@ -14,6 +14,7 @@ import com.skuniv.fuwarilog.repository.DiaryContentRepository;
 import com.skuniv.fuwarilog.repository.DiaryListRepository;
 import com.skuniv.fuwarilog.repository.DiaryRepository;
 import com.skuniv.fuwarilog.repository.TripRepository;
+import jakarta.persistence.CollectionTable;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -66,12 +69,25 @@ public class DiaryService {
      * @implSpec 다이어리 폴더내 리스트 조회
      * @param userId 사용자 고유 번호
      */
-    public List<DiaryListResponse.DiaryListResDTO> getAllDiaryList(Long userId, Long diaryId) {
+    public List<DiaryListResponse.DiaryListResDTO> getAllDiaryList(Long userId, Long diaryId, Boolean isPublic) {
+
+        List<DiaryListResponse.DiaryListResDTO> result;
 
         List<DiaryList> diaryList = diaryListRepository.findAllByDiaryId(diaryId);
-        return diaryList.stream()
-                .map(DiaryListResponse.DiaryListResDTO::from)
-                .collect(Collectors.toList());
+
+        List<Boolean> isPublics = Arrays.asList(true, false);
+
+        if (isPublic != null) {
+            result = diaryList.stream()
+                    .map(DiaryListResponse.DiaryListResDTO::from)
+                    .filter(diaryList1 -> isPublics.contains(diaryList1.getIsPublic()))
+                    .collect(Collectors.toList());
+        } else {
+            result = diaryList.stream()
+                    .map(DiaryListResponse.DiaryListResDTO::from)
+                    .collect(Collectors.toList());
+        }
+        return result;
     }
 
     /**

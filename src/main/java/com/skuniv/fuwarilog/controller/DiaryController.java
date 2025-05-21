@@ -45,14 +45,15 @@ public class DiaryController {
     @Operation(summary = "다이어리 폴더 내 리스트 조회", description = "사용자 id, 다이어리 폴더 id 입력 시 리스트 조회")
     public ResponseEntity<List<DiaryListResponse.DiaryListResDTO>> getAllDiaryList(
             @RequestHeader("Authorization") String token,
-            @RequestParam(required = true) Long diaryId) {
+            @RequestParam(required = true) Long diaryId,
+            @RequestParam(required = false) Boolean isPublic) {
 
         // 1. 토큰 검증
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
 
         // 2. 사용자 고유 번호 추출
         Long userId = jwtTokenProvider.getUserId(token);
-        return ResponseEntity.ok(diaryService.getAllDiaryList(userId, diaryId));
+        return ResponseEntity.ok(diaryService.getAllDiaryList(userId, diaryId, isPublic));
     }
 
     @PostMapping(value = "/content/{diaryListId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -60,7 +61,7 @@ public class DiaryController {
     public ResponseEntity<?> createDiaryContent(
             @RequestHeader("Authorization") String token,
             @RequestParam(required = true) Long diaryListId,
-            @RequestPart(value = "dto") DiaryContentRequest.ContentDTO dto,
+            @RequestPart DiaryContentRequest.ContentDTO dto,
             @RequestPart(value = "image", required = false) MultipartFile image) {
 
         // 1. 토큰 검증
@@ -74,12 +75,12 @@ public class DiaryController {
         return ResponseEntity.ok(result);
     }
 
-    @PutMapping("/content/{diaryListId}")
+    @PutMapping(value = "/content/{diaryListId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "다이어리 내용 수정 API", description = "diaryListId를 입력, 내용 입력 시 수정 완료")
     public ResponseEntity<?> editDiaryContent(
             @RequestHeader("Authorization") String token,
             @RequestParam(required = true) Long diaryListId,
-            @RequestPart(value = "dto") DiaryContentRequest.ContentDTO dto,
+            @RequestPart DiaryContentRequest.ContentDTO dto,
             @RequestPart(value = "image", required = false) MultipartFile image) {
 
         // 1. 토큰 검증

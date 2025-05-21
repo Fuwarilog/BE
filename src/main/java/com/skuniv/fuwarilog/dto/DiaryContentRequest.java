@@ -12,7 +12,7 @@ public class DiaryContentRequest {
     @Getter
     @Setter
     @Schema(title = "REQ 01: 다이어리 작성 DTO")
-    public class ContentDTO {
+    public static class ContentDTO {
         @Schema(description = "다이어리 내용")
         private String content;
     }
