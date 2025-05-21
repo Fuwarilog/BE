@@ -46,6 +46,7 @@ public class DiaryController {
     public ResponseEntity<List<DiaryListResponse.DiaryListResDTO>> getAllDiaryList(
             @RequestHeader("Authorization") String token,
             @RequestParam(required = true) Long diaryId) {
+
         // 1. 토큰 검증
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
 
@@ -97,6 +98,9 @@ public class DiaryController {
     public ResponseEntity<?> getContent(
             @RequestHeader("Authorization") String token,
             @RequestParam Long diaryListId) {
+
+        // 1. 토큰 검증
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
 
         Long userId = jwtTokenProvider.getUserId(token);
         DiaryContent content = diaryService.getDiaryContent(userId, diaryListId);
