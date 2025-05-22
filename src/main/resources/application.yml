@@ -20,10 +20,6 @@ spring:
   data:
     mongodb:
       uri: mongodb+srv://${MONGO_USER}:${MONGO_PW}@fuwarilog.ttscmet.mongodb.net/${MONGO_DB}?retryWrites=true&w=majority&appName=fuwarilog
-      auto-index-creation: true
-      uuid-representation: standard
-      ssl:
-        enabled: true
   jpa:
     hibernate:
       ddl-auto: update

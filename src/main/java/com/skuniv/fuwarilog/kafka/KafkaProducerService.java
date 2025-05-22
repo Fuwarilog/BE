@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -30,14 +31,19 @@ public class KafkaProducerService {
     @Value("${exchange.api.key}")
     private String apiKey;
 
+    /**
+     * @implSpec 실시간 환율 데이터 연동 및 전달
+     */
+    @Scheduled(cron = "0 0/1 * * * *")
     public void fetchAndSendExchangeRates() {
-        try {
-            String url = UriComponentsBuilder.fromHttpUrl("https://www.koreaexim.go.kr/site/program/financial/exchangeJSON")
-                    .queryParam("authkey", apiKey)
-                    .queryParam("searchdate", LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                    .queryParam("data", "AP01")
-                    .toUriString();
+        // 환율 실시간 API 연동
+        String url = UriComponentsBuilder.fromHttpUrl("https://www.koreaexim.go.kr/site/program/financial/exchangeJSON")
+                .queryParam("authkey", apiKey)
+                .queryParam("searchdate", LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .queryParam("data", "AP01")
+                .toUriString();
 
+        try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
@@ -45,6 +51,8 @@ public class KafkaProducerService {
                 JsonNode root = mapper.readTree(response.getBody());
 
                 for (JsonNode node : root) {
+                    if(!node.path("result").asText().equals("1")) continue;
+
                     ExchangeRateRequest.ExchangeRateDTO dto = new ExchangeRateRequest.ExchangeRateDTO();
                     dto.setCurUnit(node.get("cur_unit").asText());
                     dto.setDealBasR(node.get("deal_bas_r").asText());

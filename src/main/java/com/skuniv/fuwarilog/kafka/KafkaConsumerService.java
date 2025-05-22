@@ -2,6 +2,8 @@ package com.skuniv.fuwarilog.kafka;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.skuniv.fuwarilog.config.exception.BadRequestException;
+import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.ExchangeRate;
 import com.skuniv.fuwarilog.dto.ExchangeRateRequest;
 import com.skuniv.fuwarilog.repository.CurrencyPredictionRepository;
@@ -22,6 +24,10 @@ public class KafkaConsumerService {
     private final ObjectMapper objectMapper;
     private final ExchangeRateRepository exchangeRateRepository;
 
+    /**
+     * @implSpec 환율 데이터 Consumer
+     * @param message 토픽에서 받은 메세지
+     */
     @KafkaListener(topics = "exchange_rate", groupId = "fuwarilog-group")
     public void consume(String message) {
         try {
@@ -36,6 +42,7 @@ public class KafkaConsumerService {
             exchangeRateRepository.save(rate);
         } catch (Exception e) {
             log.error("Kafka 메시지 소비 중 오류 발생", e);
+            throw new BadRequestException(ErrorResponseStatus.REQUEST_ERROR);
         }
     }
 }
