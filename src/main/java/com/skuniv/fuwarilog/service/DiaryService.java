@@ -72,7 +72,6 @@ public class DiaryService {
      * @return result 다이어리 리스트 반환
      */
     public List<DiaryListResponse.DiaryListResDTO> getAllDiaryList(Long userId, Long diaryId, Boolean isPublic) {
-
         try {
             List<DiaryListResponse.DiaryListResDTO> result;
 
@@ -220,5 +219,21 @@ public class DiaryService {
         contentDoc.setContent(updatedContent.trim());
         list.setUpdatedAt(LocalDateTime.now());
         diaryContentRepository.save(contentDoc);
+    }
+
+    public DiaryListResponse.isPublicDiaryDTO isPublicDiary(Long diaryListId, Long userId, Boolean isPublic) {
+        try {
+            DiaryList diaryList = diaryListRepository.findById(diaryListId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+
+            diaryList.setIsPublic(isPublic);
+            diaryListRepository.save(diaryList);
+            log.info(diaryList.toString());
+
+            return DiaryListResponse.isPublicDiaryDTO.from(diaryList);
+        } catch (Exception e){
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
+        }
     }
 }

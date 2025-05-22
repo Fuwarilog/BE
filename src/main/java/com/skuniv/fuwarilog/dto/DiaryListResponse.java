@@ -26,4 +26,19 @@ public class DiaryListResponse {
                     diaryList.getIsPublic());
         }
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @Schema(title = "RES 2. 다이어리 공개여부 반환 DTO")
+    public static class isPublicDiaryDTO {
+        private long id;
+        private Boolean isPublic;
+
+        public static isPublicDiaryDTO from(DiaryList diaryList) {
+            return new isPublicDiaryDTO(
+                    diaryList.getId(),
+                    diaryList.getIsPublic());
+        }
+    }
 }
