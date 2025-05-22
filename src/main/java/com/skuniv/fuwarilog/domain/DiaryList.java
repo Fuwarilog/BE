@@ -25,10 +25,6 @@ public class DiaryList extends BaseEntity{
     @Column(name = "date")
     private LocalDate date;
 
-    @Column(name = "like_count")
-    private int likeCount;
-
     @Column(name = "is_public")
-    private boolean isPublic;
-
+    private Boolean isPublic;
 }
