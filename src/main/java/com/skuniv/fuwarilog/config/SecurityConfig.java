@@ -29,7 +29,6 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
-    //private final CorsConfig corsConfig;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -41,16 +40,17 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                //.cors(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors
                         .configurationSource(CorsConfig.corsConfigurationSource())
                 )
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers(
-                                "/signup", "/", "/login","/swagger-ui/**",
-                                "/v3/api-docs/**", "/swager-resources/**",
-                                "/swagger-ui.html", "/webjars/**", "/api/v1/users/**",
-                                "/api/v1/oauth2/**"
+                                "/signup", "/", "/login",
+                                "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**",
+                                "/webjars/**",
+                                "/api/v1/users/**", "/api/v1/oauth2/**", "/oauth2/**",
+                                "/static/diary/**", "/static/profile/**",
+                                "/api/v1/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -58,7 +58,6 @@ public class SecurityConfig {
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(customOAuth2SuccessHandler)
-                        //.defaultSuccessUrl("/api/v1/exchange") // or ("/")
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
