@@ -17,15 +17,13 @@ public class DiaryListResponse {
         private long diaryId;
         private LocalDate date;
         private Boolean isPublic;
-        private Integer likes;
 
         public static DiaryListResDTO from(DiaryList diaryList) {
             return new DiaryListResDTO(
                     diaryList.getId(),
                     diaryList.getDiary().getId(),
                     diaryList.getDate(),
-                    diaryList.isPublic(),
-                    diaryList.getLikeCount());
+                    diaryList.getIsPublic());
         }
     }
 }

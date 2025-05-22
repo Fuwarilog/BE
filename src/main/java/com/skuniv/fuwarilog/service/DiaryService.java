@@ -76,14 +76,20 @@ public class DiaryService {
         try {
             List<DiaryListResponse.DiaryListResDTO> result;
 
-            List<DiaryList> diaryList = diaryListRepository.findAllByDiaryId(diaryId);
+            List<DiaryList> diaryList = diaryListRepository.findAllByDiaryIdOrderByDateAsc(diaryId);
 
-            List<Boolean> isPublics = Arrays.asList(true, false);
 
             if (isPublic != null) {
                 result = diaryList.stream()
-                        .map(DiaryListResponse.DiaryListResDTO::from)
-                        .filter(diaryList1 -> isPublics.contains(diaryList1.getIsPublic()))
+                        .filter(diaryList1 -> diaryList1.getIsPublic() == isPublic)
+                        .map(diaryList1 -> {
+                            return DiaryListResponse.DiaryListResDTO.builder()
+                                    .id(diaryList1.getId())
+                                    .diaryId(diaryList1.getDiary().getId())
+                                    .date(diaryList1.getDate())
+                                    .isPublic(diaryList1.getIsPublic())
+                                    .build();
+                        })
                         .collect(Collectors.toList());
             } else {
                 result = diaryList.stream()
