@@ -17,8 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -177,13 +179,33 @@ public class TripService {
             diary.setEndDate(infoDTO.getEndDate());
             diary = diaryRepository.save(diary);
 
-            // 여행일정 마다 다이어리 생성
-            for (LocalDate d=infoDTO.getStartDate(); d.compareTo(infoDTO.getEndDate()) <= 0; d = d.plusDays(1)) {
-                DiaryList newDiaries = DiaryList.builder()
+            List<DiaryList> existingLists = diaryListRepository.findByDiary(diary);
+            Set<LocalDate> existingDates = existingLists.stream()
+                    .map(DiaryList::getDate)
+                    .collect(Collectors.toSet());
+
+            Set<LocalDate> newDates = new HashSet<>();
+            for (LocalDate d = infoDTO.getStartDate(); !d.isAfter(infoDTO.getEndDate()); d = d.plusDays(1)) {
+                newDates.add(d);
+            }
+
+            Set<LocalDate> toAdd = new HashSet<>(newDates);
+            toAdd.removeAll(existingDates);
+
+            Set<LocalDate> toRemove = new HashSet<>(existingDates);
+            toRemove.removeAll(newDates);
+
+            // 추가된 일정의 다이어리 생성
+            for(LocalDate d : toAdd) {
+                diaryListRepository.save(DiaryList.builder()
                         .diary(diary)
                         .date(d)
-                        .build();
-                diaryListRepository.save(newDiaries);
+                        .build());
+            }
+
+            // 삭제
+            for (LocalDate d : toRemove) {
+                diaryListRepository.deleteByDiaryAndDate(diary, d);
             }
         }
 
