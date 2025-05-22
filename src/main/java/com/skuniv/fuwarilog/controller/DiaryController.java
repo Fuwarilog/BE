@@ -94,7 +94,7 @@ public class DiaryController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/list/content")
+    @GetMapping("/content/{diaryListId}")
     @Operation(summary = "다이어리 내용 조회 API", description = "다이어리 내용 조회")
     public ResponseEntity<?> getContent(
             @RequestHeader("Authorization") String token,
@@ -108,7 +108,7 @@ public class DiaryController {
         return ResponseEntity.ok(content);
     }
 
-    @DeleteMapping("/list/content")
+    @DeleteMapping("/content/{diaryListId}/{tag}")
     @Operation(summary = "다이어리 내용 태그 삭제 API", description = "특정 태그String 입력 시 다이어리 내용의 해당 태그 삭제")
     public ResponseEntity<?> deleteTagFromContent(
             @RequestHeader("Authorization") String token,
@@ -124,6 +124,24 @@ public class DiaryController {
         // 3. 다이어리 내의 태그 삭제
         diaryService.removeTagFromContent(userId, diaryListId, tag);
         return ResponseEntity.ok("태그 삭제 완료");
+    }
+
+    @PostMapping(value = "/content/{diaryListId}/{isPublic}")
+    @Operation(summary = "다이어리 공개여부 설정 API", description = " diaryListId, isPublic 입력 시 공개여부 설정 변경됨")
+    public ResponseEntity<DiaryListResponse.isPublicDiaryDTO> isPublicDiary(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(required = true) Long diaryListId,
+            @RequestParam(required = true) Boolean isPublic) {
+
+        // 1. 토큰 검증
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
+
+        // 2. 사용자 고유 번호 추출
+        Long userId = jwtTokenProvider.getUserId(token);
+
+        // 3. 공개여부 설정
+        DiaryListResponse.isPublicDiaryDTO result = diaryService.isPublicDiary(diaryListId, userId, isPublic);
+        return ResponseEntity.ok(result);
     }
 
 }
