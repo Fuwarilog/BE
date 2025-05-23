@@ -7,8 +7,6 @@ import com.skuniv.fuwarilog.dto.UserResponse;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

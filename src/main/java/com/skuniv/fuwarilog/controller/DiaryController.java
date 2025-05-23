@@ -45,7 +45,7 @@ public class DiaryController {
     @Operation(summary = "다이어리 폴더 내 리스트 조회", description = "사용자 id, 다이어리 폴더 id 입력 시 리스트 조회")
     public ResponseEntity<List<DiaryListResponse.DiaryListResDTO>> getAllDiaryList(
             @RequestHeader("Authorization") String token,
-            @RequestParam(required = true) Long diaryId,
+            @PathVariable Long diaryId,
             @RequestParam(required = false) Boolean isPublic) {
 
         // 1. 토큰 검증
@@ -60,8 +60,8 @@ public class DiaryController {
     @Operation(summary = "다이어리 내용 작성 API", description = "diaryListId, 내용 입력 시 작성 완료")
     public ResponseEntity<?> createDiaryContent(
             @RequestHeader("Authorization") String token,
-            @RequestParam(required = true) Long diaryListId,
-            @RequestPart DiaryContentRequest.ContentDTO dto,
+            @PathVariable Long diaryListId,
+            @RequestPart(required = false) DiaryContentRequest.ContentDTO dto,
             @RequestPart(value = "image", required = false) MultipartFile image) {
 
         // 1. 토큰 검증
@@ -79,8 +79,8 @@ public class DiaryController {
     @Operation(summary = "다이어리 내용 수정 API", description = "diaryListId를 입력, 내용 입력 시 수정 완료")
     public ResponseEntity<?> editDiaryContent(
             @RequestHeader("Authorization") String token,
-            @RequestParam(required = true) Long diaryListId,
-            @RequestPart DiaryContentRequest.ContentDTO dto,
+            @PathVariable Long diaryListId,
+            @RequestPart(required = false) DiaryContentRequest.ContentDTO dto,
             @RequestPart(value = "image", required = false) MultipartFile image) {
 
         // 1. 토큰 검증
@@ -98,7 +98,7 @@ public class DiaryController {
     @Operation(summary = "다이어리 내용 조회 API", description = "다이어리 내용 조회")
     public ResponseEntity<?> getContent(
             @RequestHeader("Authorization") String token,
-            @RequestParam Long diaryListId) {
+            @PathVariable Long diaryListId) {
 
         // 1. 토큰 검증
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
@@ -113,7 +113,7 @@ public class DiaryController {
     public ResponseEntity<?> deleteTagFromContent(
             @RequestHeader("Authorization") String token,
             @RequestParam String tag,
-            @RequestParam Long diaryListId) {
+            @PathVariable Long diaryListId) {
 
         // 1. 토큰 검증
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
@@ -130,7 +130,7 @@ public class DiaryController {
     @Operation(summary = "다이어리 공개여부 설정 API", description = " diaryListId, isPublic 입력 시 공개여부 설정 변경됨")
     public ResponseEntity<DiaryListResponse.isPublicDiaryDTO> isPublicDiary(
             @RequestHeader("Authorization") String token,
-            @RequestParam(required = true) Long diaryListId,
+            @PathVariable Long diaryListId,
             @RequestParam(required = true) Boolean isPublic) {
 
         // 1. 토큰 검증

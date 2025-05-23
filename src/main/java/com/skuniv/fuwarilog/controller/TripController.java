@@ -2,8 +2,6 @@ package com.skuniv.fuwarilog.controller;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.domain.Diary;
-import com.skuniv.fuwarilog.domain.Trip;
 import com.skuniv.fuwarilog.dto.TripRequest;
 import com.skuniv.fuwarilog.dto.TripResponse;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
@@ -59,7 +57,7 @@ public class TripController {
     @Operation(summary = "여행일정 수정 API", description = " 여행ID 입력 시 해당 일정 수정 가능")
     public ResponseEntity<TripResponse.TripInfoDTO> editEvent(
             @RequestHeader("Authorization") String token,
-            @RequestParam(required = false) Long tripId,
+            @PathVariable Long tripId,
             @RequestBody TripRequest.TripInfoDTO infoDTO) {
 
         // 1. 토큰 확인
@@ -72,7 +70,7 @@ public class TripController {
     }
 
     @DeleteMapping("/event/{id}")
-    @Operation(summary = "일정 삭제 API", description = "일정 id 입력 시 해당하는 여행일정 삭제")
+    @Operation(summary = "일정 삭제 API", description = "Trip id 입력 시 해당하는 여행일정 삭제")
     public ResponseEntity<Void> deleteTrip(
             @RequestHeader("Authorization") String token,
             @PathVariable Long id) {
@@ -92,17 +90,17 @@ public class TripController {
     }
 
     @GetMapping("/event/{id}")
-    @Operation(summary = "일정 조회 API", description = "여행 일정 리스트 혹은 특정 여행 정보 반환 - 조건이 없으면 사용자의 모든 일정 반환")
+    @Operation(summary = "일정 조회 API", description = "tripID 입력 시 여행 정보 반환 - 조건이 없으면 사용자의 모든 일정 반환")
     public ResponseEntity<List<TripResponse.TripInfoDTO>> getEvent(
             @RequestHeader("Authorization") String token,
-            @RequestParam(required = false) Long tripId) {
+            @PathVariable Long id) {
 
         // 1. 토큰 확인
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
 
         // 2. 토큰 -> 사용자 아이디
         Long userId = jwtTokenProvider.getUserId(token);
-        List<TripResponse.TripInfoDTO> events = tripService.getEvents(userId, tripId);
+        List<TripResponse.TripInfoDTO> events = tripService.getEvents(userId, id);
         return ResponseEntity.ok(events);
     }
 }
