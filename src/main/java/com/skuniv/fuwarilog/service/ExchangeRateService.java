@@ -23,7 +23,7 @@ public class ExchangeRateService {
     /**
      * @implSpec 데이터 스케쥴러
      */
-    @Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(cron = "0 0 11 * * ?")
     public void deleteOldRates() {
         LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
         int result = exchangeRateRepository.deleteByTimestampBefore(threeMonthsAgo);

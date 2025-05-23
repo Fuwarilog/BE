@@ -21,28 +21,28 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class KafkaConsumerService {
 
-    private final ObjectMapper objectMapper;
-    private final ExchangeRateRepository exchangeRateRepository;
+//    private final ObjectMapper objectMapper;
+//    private final ExchangeRateRepository exchangeRateRepository;
 
-    /**
-     * @implSpec 환율 데이터 Consumer
-     * @param message 토픽에서 받은 메세지
-     */
-    @KafkaListener(topics = "exchange_rate", groupId = "fuwarilog-group")
-    public void consume(String message) {
-        try {
-            JsonNode node = objectMapper.readTree(message);
-
-            ExchangeRate rate = new ExchangeRate();
-            rate.setCurUnit(node.get("cur_unit").asText());
-            rate.setCurNm(node.get("cur_nm").asText());
-            rate.setDealBasR(Double.parseDouble(node.get("deal_bas_r").asText()));
-            rate.setTimestamp(LocalDateTime.parse(node.get("timestamp").asText()));
-
-            exchangeRateRepository.save(rate);
-        } catch (Exception e) {
-            log.error("Kafka 메시지 소비 중 오류 발생", e);
-            throw new BadRequestException(ErrorResponseStatus.REQUEST_ERROR);
-        }
-    }
+//    /**
+//     * @implSpec 환율 데이터 Consumer
+//     * @param message 토픽에서 받은 메세지
+//     */
+//    @KafkaListener(topics = "exchange-prediction-rate", groupId = "fuwarilog-group")
+//    public void consume(String message) {
+//        try {
+//            JsonNode node = objectMapper.readTree(message);
+//
+//            ExchangeRate rate = new ExchangeRate();
+//            rate.setCurUnit(node.get("cur_unit").asText());
+//            rate.setCurNm(node.get("cur_nm").asText());
+//            rate.setDealBasR(Double.parseDouble(node.get("deal_bas_r").asText()));
+//            rate.setTimestamp(LocalDateTime.parse(node.get("timestamp").asText()));
+//
+//            exchangeRateRepository.save(rate);
+//        } catch (Exception e) {
+//            log.error("Kafka 메시지 소비 중 오류 발생", e);
+//            throw new BadRequestException(ErrorResponseStatus.REQUEST_ERROR);
+//        }
+//    }
 }
