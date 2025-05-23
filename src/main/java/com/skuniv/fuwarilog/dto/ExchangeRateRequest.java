@@ -7,11 +7,8 @@ import java.time.LocalDateTime;
 
 public class ExchangeRateRequest {
 
-    @Data
     @Getter
     @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
     @Schema(description = "RES1. 환율 정보 전달 DTO")
     public static class ExchangeRateDTO {
         private String curUnit; // 통화 코드
