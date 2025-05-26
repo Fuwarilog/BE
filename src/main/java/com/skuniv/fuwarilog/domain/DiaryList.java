@@ -22,9 +22,13 @@ public class DiaryList extends BaseEntity{
     @JoinColumn(name = "diary_id")
     private Diary diary;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id")
+    private Post post;
+
     @Column(name = "date")
     private LocalDate date;
 
-    @Column(name = "is_public")
+    @Column(name = "is_public", columnDefinition = "boolean default 'False'")
     private Boolean isPublic;
 }

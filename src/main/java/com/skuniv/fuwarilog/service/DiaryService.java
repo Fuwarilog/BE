@@ -2,16 +2,12 @@ package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.domain.DiaryContent;
-import com.skuniv.fuwarilog.domain.DiaryList;
-import com.skuniv.fuwarilog.domain.Trip;
+import com.skuniv.fuwarilog.domain.*;
 import com.skuniv.fuwarilog.dto.DiaryContentRequest;
 import com.skuniv.fuwarilog.dto.DiaryListResponse;
 import com.skuniv.fuwarilog.dto.DiaryResponse;
 import com.skuniv.fuwarilog.dto.TripResponse;
-import com.skuniv.fuwarilog.repository.DiaryContentRepository;
-import com.skuniv.fuwarilog.repository.DiaryListRepository;
-import com.skuniv.fuwarilog.repository.TripRepository;
+import com.skuniv.fuwarilog.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,6 +34,8 @@ public class DiaryService {
     private final DiaryContentRepository diaryContentRepository;
     private final DiaryListRepository diaryListRepository;
     private final TripRepository tripRepository;
+    private final UserRepository userRepository;
+    private final PostRepository postRepository;
 
     /**
      * @implSpec 다이어리 폴더 조회
@@ -221,14 +220,33 @@ public class DiaryService {
         diaryContentRepository.save(contentDoc);
     }
 
+    /**
+     * @implSpec 다이어리 공개/비공개 설정
+     * @param userId 사용자 고유 번호
+     * @param diaryListId 다이어리 고유 일정
+     * @param isPublic 공개/비공개 설정 값
+     */
     public DiaryListResponse.isPublicDiaryDTO isPublicDiary(Long diaryListId, Long userId, Boolean isPublic) {
         try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
             DiaryList diaryList = diaryListRepository.findById(diaryListId)
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+
+            if(!isPublic) {
+                postRepository.deleteByDiaryList(diaryList);
+            } else {
+                Post post = Post.builder()
+                        .diaryList(diaryList)
+                        .build();
+                postRepository.save(post);
+            }
 
             diaryList.setIsPublic(isPublic);
             diaryListRepository.save(diaryList);
             log.info(diaryList.toString());
+
 
             return DiaryListResponse.isPublicDiaryDTO.from(diaryList);
         } catch (Exception e){
