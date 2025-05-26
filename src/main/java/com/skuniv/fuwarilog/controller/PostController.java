@@ -16,28 +16,28 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-//@RestController
-//@RequiredArgsConstructor
-//@RequestMapping("/api/v1/posts")
-//@Tag(name = "Post API", description = "게시글 관련 조회, 북마크, 좋아요 관련 기능")
-//public class PostController {
-//
-//    private final JwtTokenProvider jwtTokenProvider;
-//    private final PostService postService;
-//
-//    @GetMapping("/")
-//    @Operation(summary = "포스트 조회 API", description = "공개 처리된 게시글 최신순으로 반환")
-//    public ResponseEntity<List<PostResponse.PostListDTO>> getPosts (
-//            @RequestHeader("Authorization") String token) {
-//
-//        // 1. 토큰 검증
-//        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
-//
-//        // 2. 사용자 고유 번호 추출
-//        Long userId = jwtTokenProvider.getUserId(token);
-//
-//        // 3. 포스트 조회
-//        List<PostResponse.PostListDTO> results = postService.getPosts(userId);
-//        return ResponseEntity.ok(results);
-//    }
-//}
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/v1/posts")
+@Tag(name = "Post API", description = "게시글 관련 조회, 북마크, 좋아요 관련 기능")
+public class PostController {
+
+    private final JwtTokenProvider jwtTokenProvider;
+    private final PostService postService;
+
+    @GetMapping("/")
+    @Operation(summary = "포스트 조회 API", description = "공개 처리된 게시글 최신순으로 반환")
+    public ResponseEntity<List<PostResponse.PostListDTO>> getPosts (
+            @RequestHeader("Authorization") String token) {
+
+        // 1. 토큰 검증
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
+
+        // 2. 사용자 고유 번호 추출
+        Long userId = jwtTokenProvider.getUserId(token);
+
+        // 3. 포스트 조회
+        List<PostResponse.PostListDTO> results = postService.getPosts(userId);
+        return ResponseEntity.ok(results);
+    }
+}
