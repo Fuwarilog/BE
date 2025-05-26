@@ -22,10 +22,6 @@ public class DiaryList extends BaseEntity{
     @JoinColumn(name = "diary_id")
     private Diary diary;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id")
-    private Post post;
-
     @Column(name = "date")
     private LocalDate date;
 

@@ -234,10 +234,12 @@ public class DiaryService {
             DiaryList diaryList = diaryListRepository.findById(diaryListId)
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
+            Post post = postRepository.findByDiaryList(diaryList);
+
             if(!isPublic) {
-                postRepository.deleteByDiaryList(diaryList);
+                postRepository.delete(post);
             } else {
-                Post post = Post.builder()
+                post = Post.builder()
                         .diaryList(diaryList)
                         .build();
                 postRepository.save(post);

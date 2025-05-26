@@ -18,7 +18,8 @@ public class Post extends BaseEntity{
     @Column(name = "post_id")
     private Long id;
 
-    @OneToOne(mappedBy = "post")
+    @OneToOne
+    @JoinColumn(name = "diarylist_id")
     private DiaryList diaryList;
 
     @Column(name = "likes_count")

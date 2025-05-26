@@ -8,6 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post,Long> {
-    @Transactional
-    void deleteByDiaryList(DiaryList diaryList);
+
+    Post findByDiaryList(DiaryList diaryList);
 }
