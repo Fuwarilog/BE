@@ -39,60 +39,64 @@ public class KafkaProducerService {
     /**
      * @implSpec 실시간 환율 데이터 연동 및 전달
      */
-    @Scheduled(cron = "0 0/30 * * * *")
+    @Scheduled(cron = "0 0/1 * * * *")
     public void fetchAndSendExchangeRates() {
         // 환율 실시간 API 연동
-        String uri = UriComponentsBuilder.fromHttpUrl("https://www.koreaexim.go.kr/site/program/financial/exchangeJSON")
-                .queryParam("authkey", apiKey)
-                .queryParam("searchdate", LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                .queryParam("data", "AP01")
-                .toUriString();
+        try{
+            log.info("Start fetchAndSendExchangeRates");
 
-        log.info("Fetching exchange rates from Kafka ...");
-        log.info(uri);
+            for (LocalDate date = LocalDate.parse("2024-12-31"); date.isEqual(LocalDate.now()); date = date.plusDays(1)) {
+                String uri = UriComponentsBuilder.fromHttpUrl("https://www.koreaexim.go.kr/site/program/financial/exchangeJSON")
+                        .queryParam("authkey", apiKey)
+                        .queryParam("searchdate", date)
+                        .queryParam("data", "AP01")
+                        .toUriString();
 
-        try {
-            ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
+                log.info("Fetching exchange rates from Kafka ...");
+                log.info(uri);
 
-            log.info(response.getBody());
+                ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
-            List<String> currency = Arrays.asList("USD", "JPY", "CNY", "KRW");
+                log.info(response.getBody());
 
-            if (response.getStatusCode() == HttpStatus.OK) {
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode root = mapper.readTree(response.getBody());
+                List<String> currency = Arrays.asList("USD", "JPY", "CNY", "KRW");
 
-                log.info(root.toString());
+                if (response.getStatusCode() == HttpStatus.OK) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    JsonNode root = mapper.readTree(response.getBody());
 
-                for (JsonNode node : root) {
-                    if(!node.path("result").asText().equals("1")) continue;
+                    log.info(root.toString());
 
-                    if(currency.contains(node.path("cur_unit").asText())) {
+                    for (JsonNode node : root) {
+                        if (!node.path("result").asText().equals("1")) continue;
 
-                        ExchangeRateRequest.ExchangeRateDTO dto = new ExchangeRateRequest.ExchangeRateDTO();
-                        dto.setCurUnit(node.get("cur_unit").asText());
-                        dto.setDealBasR(node.get("deal_bas_r").asText());
-                        dto.setCurNm(node.get("cur_nm").asText());
-                        dto.setTimeStamp(LocalDateTime.now().toString());
+                        if (currency.contains(node.path("cur_unit").asText())) {
 
-                        log.info("Sending data to Kafka topic...");
+                            ExchangeRateRequest.ExchangeRateDTO dto = new ExchangeRateRequest.ExchangeRateDTO();
+                            dto.setCurUnit(node.get("cur_unit").asText());
+                            dto.setDealBasR(node.get("deal_bas_r").asText());
+                            dto.setTimeStamp(LocalDateTime.now().toString());
 
-                        String json = mapper.writeValueAsString(dto);
-                        kafkaTemplate.send("exchange_value_rate", dto.getCurUnit(), json)
-                                .whenComplete((result, e) -> {
-                                    if (e != null) {
-                                        log.error(e.getMessage());
-                                    } else {
-                                        log.info(result.toString());
-                                    }
-                                });
+                            log.info(node.get("cur_unit").toString());
+                            log.info("Sending data to Kafka topic...");
+
+                            String json = mapper.writeValueAsString(dto);
+                            kafkaTemplate.send("exchange_value_rate", dto.getCurUnit(), json)
+                                    .whenComplete((result, e) -> {
+                                        if (e != null) {
+                                            log.error(e.getMessage());
+                                        } else {
+                                            log.info(result.toString());
+                                        }
+                                    });
+                        }
                     }
                 }
             }
 
         } catch (Exception e) {
-            log.error("OpenAPI 호출 또는 Kafka 전송 실패", e);
-            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
+                log.error("OpenAPI 호출 또는 Kafka 전송 실패", e);
+                throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
     }
 }
