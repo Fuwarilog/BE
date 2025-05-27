@@ -7,10 +7,10 @@ import com.skuniv.fuwarilog.dto.PostResponse;
 import com.skuniv.fuwarilog.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.common.errors.ResourceNotFoundException;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,28 +19,28 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostService {
 
-
     private final UserRepository userRepository;
-    private final DiaryRepository diaryRepository;
-    private final DiaryListRepository diaryListRepository;
-    private final TripRepository tripRepository;
     private final PostRepository postRepository;
 
+    /**
+     * @implSpec 게시글 조회
+     * @param userId 사용자 고유 번호
+     * @return List<PostResponse.PostListDTO> 게시글 목록 반환
+     */
     public List<PostResponse.PostListDTO> getPosts(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
-        Trip trip = tripRepository.findByUserId(userId);
+            List<Post> post = postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Diary diary = diaryRepository.findByTripId(trip.getId());
+            return post.stream()
+                    .map(PostResponse.PostListDTO::from)
+                    .collect(Collectors.toList());
 
-        DiaryList diaryList = diaryListRepository.findByDiaryId(diary.getId());
-
-        Post post = postRepository.findByDiaryList(diaryList);
-
-        List<PostResponse.PostListDTO> result = new ArrayList<>();
-        return result.stream()
-                .map(PostResponse.PostListDTO::from)
-                .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
+        }
     }
 }
