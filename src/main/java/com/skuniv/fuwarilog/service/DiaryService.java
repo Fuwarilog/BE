@@ -3,7 +3,7 @@ package com.skuniv.fuwarilog.service;
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.*;
-import com.skuniv.fuwarilog.dto.DiaryList.DiaryContentRequest;
+import com.skuniv.fuwarilog.dto.DiaryContent.DiaryContentRequest;
 import com.skuniv.fuwarilog.dto.DiaryList.DiaryListResponse;
 import com.skuniv.fuwarilog.dto.Diary.DiaryResponse;
 import com.skuniv.fuwarilog.dto.Trip.TripResponse;

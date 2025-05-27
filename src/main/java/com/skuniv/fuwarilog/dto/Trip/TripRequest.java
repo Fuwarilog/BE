@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class TripRequest {
 
@@ -27,5 +28,6 @@ public class TripRequest {
 
         @Schema(name="endDate", example = "yyyy-MM-dd")
         LocalDate endDate;
+
     }
 }
