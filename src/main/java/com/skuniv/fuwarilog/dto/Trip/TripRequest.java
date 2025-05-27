@@ -1,10 +1,11 @@
-package com.skuniv.fuwarilog.dto;
+package com.skuniv.fuwarilog.dto.Trip;
 
-import com.skuniv.fuwarilog.domain.enums.TripStatus;
+import com.skuniv.fuwarilog.domain.Trip;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class TripRequest {
 
@@ -28,5 +29,6 @@ public class TripRequest {
 
         @Schema(name="endDate", example = "yyyy-MM-dd")
         LocalDate endDate;
+
     }
 }

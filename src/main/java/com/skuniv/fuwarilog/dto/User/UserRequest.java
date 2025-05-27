@@ -1,4 +1,4 @@
-package com.skuniv.fuwarilog.dto;
+package com.skuniv.fuwarilog.dto.User;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;

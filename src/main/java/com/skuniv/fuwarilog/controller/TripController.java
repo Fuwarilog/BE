@@ -2,8 +2,8 @@ package com.skuniv.fuwarilog.controller;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.dto.TripRequest;
-import com.skuniv.fuwarilog.dto.TripResponse;
+import com.skuniv.fuwarilog.dto.Trip.TripRequest;
+import com.skuniv.fuwarilog.dto.Trip.TripResponse;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.TripService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @Tag(name = "Calendar(Trip) API", description = "여행일정 관련(캘린더) 조회, 수정, 삭제")
 @RestController
