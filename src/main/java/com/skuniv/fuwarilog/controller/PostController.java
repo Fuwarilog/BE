@@ -45,15 +45,14 @@ public class PostController {
     @Operation(summary = "게시글 북마크 등록/취소 기능", description = "게시글 아이디 입력하면 북마크 등록 및 취소 상태 반환")
     public ResponseEntity<PostBookmarkResponse.PostBookmarkStateDTO> editPostBookmark (
             @RequestHeader("Authorization") String token,
-            @PathVariable(required = true) long postId,
-            @RequestParam(required = true) boolean state) {
+            @PathVariable(required = true) long postId) {
         // 1. 토큰 검증
         if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN);}
 
         // 2. 사용자 고유 번호 추출
         Long userId = jwtTokenProvider.getUserId(token);
 
-        PostBookmarkResponse.PostBookmarkStateDTO result = postService.editPostBookmark(userId, postId, state);
+        PostBookmarkResponse.PostBookmarkStateDTO result = postService.editPostBookmark(userId, postId);
         return ResponseEntity.ok(result);
     }
 
