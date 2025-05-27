@@ -19,10 +19,6 @@ public class ExchangeRate extends BaseEntity {
     @Column(name="exchangerate_id")
     private long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="currency_id")
-    private Currency currency;
-
     @Column(name="base_currency")
     private String baseCurrency;
 

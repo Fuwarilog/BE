@@ -1,4 +1,4 @@
-package com.skuniv.fuwarilog.dto.DiaryContent;
+package com.skuniv.fuwarilog.dto.DiaryList;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

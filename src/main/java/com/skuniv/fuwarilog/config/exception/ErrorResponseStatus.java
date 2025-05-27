@@ -27,7 +27,8 @@ public enum ErrorResponseStatus {
     NOT_EXIST_DIARYLIST(4006, "다이어리를 찾을 수 없습니다."),
     NOT_FOUND_LOCATION(4007, "해당 장소를 찾을 수 없습니다."),
     NOT_EXIST_DIARYCONTENT(4008, "다이어리 내용을 찾을 수 없습니다."),
-    DIARY_NOT_FOUND(4009, "다이어리 폴더를 찾을 수 없습니다.");
+    DIARY_NOT_FOUND(4009, "다이어리 폴더를 찾을 수 없습니다."),
+    NOT_EXIST_POST(4010, "게시글을 찾을 수 없습니다.");
 
     private final int code;
     private final String message;
