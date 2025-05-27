@@ -3,7 +3,7 @@ package com.skuniv.fuwarilog.service;
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.User;
-import com.skuniv.fuwarilog.dto.AuthRequest;
+import com.skuniv.fuwarilog.dto.Auth.AuthRequest;
 import com.skuniv.fuwarilog.repository.UserRepository;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import jakarta.servlet.http.Cookie;

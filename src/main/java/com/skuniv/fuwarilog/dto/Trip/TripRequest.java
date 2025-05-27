@@ -1,6 +1,5 @@
-package com.skuniv.fuwarilog.dto;
+package com.skuniv.fuwarilog.dto.Trip;
 
-import com.skuniv.fuwarilog.domain.enums.TripStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 

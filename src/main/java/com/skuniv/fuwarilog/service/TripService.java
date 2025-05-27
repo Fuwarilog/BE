@@ -6,8 +6,8 @@ import com.skuniv.fuwarilog.domain.Diary;
 import com.skuniv.fuwarilog.domain.DiaryList;
 import com.skuniv.fuwarilog.domain.Trip;
 import com.skuniv.fuwarilog.domain.User;
-import com.skuniv.fuwarilog.dto.TripRequest;
-import com.skuniv.fuwarilog.dto.TripResponse;
+import com.skuniv.fuwarilog.dto.Trip.TripRequest;
+import com.skuniv.fuwarilog.dto.Trip.TripResponse;
 import com.skuniv.fuwarilog.repository.DiaryListRepository;
 import com.skuniv.fuwarilog.repository.DiaryRepository;
 import com.skuniv.fuwarilog.repository.TripRepository;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
