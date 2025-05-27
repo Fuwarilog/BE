@@ -9,4 +9,6 @@ import java.util.Optional;
 
 public interface DiaryRepository extends JpaRepository<Diary, Long> {
     Optional<Diary> findByTrip(Trip trip);
+
+    Diary findByTripId(long id);
 }

@@ -1,12 +1,9 @@
-package com.skuniv.fuwarilog.dto;
+package com.skuniv.fuwarilog.dto.Location;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.time.LocalDate;
 
 public class LocationRequest {
 

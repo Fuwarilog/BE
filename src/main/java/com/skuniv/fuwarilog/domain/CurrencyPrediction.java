@@ -21,6 +21,7 @@ public class CurrencyPrediction extends BaseEntity {
     @Column(name="prediction_id")
     private long id;
 
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="trip_id")
     private Trip trip;

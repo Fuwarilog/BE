@@ -1,8 +1,10 @@
-package com.skuniv.fuwarilog.dto;
+package com.skuniv.fuwarilog.dto.ExchangeRate;
 
+import com.skuniv.fuwarilog.domain.Currency;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 public class ExchangeRateRequest {

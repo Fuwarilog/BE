@@ -2,8 +2,8 @@ package com.skuniv.fuwarilog.controller;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.dto.UserRequest;
-import com.skuniv.fuwarilog.dto.UserResponse;
+import com.skuniv.fuwarilog.dto.User.UserRequest;
+import com.skuniv.fuwarilog.dto.User.UserResponse;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
