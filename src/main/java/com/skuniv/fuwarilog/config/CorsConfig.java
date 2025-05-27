@@ -26,7 +26,7 @@ public class CorsConfig {
         configuration.setAllowedHeaders(Collections.singletonList("*"));
 
         /* 응답 헤더 설정 추가*/
-        configuration.setExposedHeaders(List.of("Authorization"));
+        //configuration.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
