@@ -1,4 +1,4 @@
-package com.skuniv.fuwarilog.dto;
+package com.skuniv.fuwarilog.dto.Post;
 
 import com.skuniv.fuwarilog.domain.Post;
 import io.swagger.v3.oas.annotations.media.Schema;

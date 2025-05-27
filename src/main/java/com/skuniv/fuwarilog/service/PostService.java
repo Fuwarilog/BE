@@ -3,14 +3,13 @@ package com.skuniv.fuwarilog.service;
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.*;
-import com.skuniv.fuwarilog.dto.PostResponse;
+import com.skuniv.fuwarilog.dto.Post.PostResponse;
 import com.skuniv.fuwarilog.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 

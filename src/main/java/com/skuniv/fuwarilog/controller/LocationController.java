@@ -2,10 +2,10 @@ package com.skuniv.fuwarilog.controller;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.dto.LocationRequest;
-import com.skuniv.fuwarilog.dto.LocationResponse;
-import com.skuniv.fuwarilog.dto.VisitedRouteDocumentRequest;
-import com.skuniv.fuwarilog.dto.VisitedRouteDocumentResponse;
+import com.skuniv.fuwarilog.dto.Location.LocationRequest;
+import com.skuniv.fuwarilog.dto.Location.LocationResponse;
+import com.skuniv.fuwarilog.dto.VisitedRouteDocument.VisitedRouteDocumentRequest;
+import com.skuniv.fuwarilog.dto.VisitedRouteDocument.VisitedRouteDocumentResponse;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.LocationService;
 import io.swagger.v3.oas.annotations.Operation;

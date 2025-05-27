@@ -1,4 +1,4 @@
-package com.skuniv.fuwarilog.dto;
+package com.skuniv.fuwarilog.dto.User;
 
 import com.skuniv.fuwarilog.domain.PostBookmark;
 import com.skuniv.fuwarilog.domain.PostLike;

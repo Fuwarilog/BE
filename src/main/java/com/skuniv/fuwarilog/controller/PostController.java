@@ -2,7 +2,7 @@ package com.skuniv.fuwarilog.controller;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.dto.PostResponse;
+import com.skuniv.fuwarilog.dto.Post.PostResponse;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
