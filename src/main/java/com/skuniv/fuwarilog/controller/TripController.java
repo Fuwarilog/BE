@@ -24,6 +24,38 @@ public class TripController {
     private final TripService tripService;
     private final JwtTokenProvider jwtTokenProvider;
 
+    @GetMapping("/event/month")
+    @Operation(summary = "월별 여행 일정 조회 API", description = "연도, 월 입력시 해당하는 기간의 여행일정 반환")
+    public ResponseEntity<List<TripResponse.TripListDTO>> getEventsByMonth (
+            @RequestHeader("Authorization") String token,
+            @RequestParam int year,
+            @RequestParam int month) {
+        // 1. 토큰 확인
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
+
+        // 2. 토큰 -> 사용자 아이디
+        Long userId = jwtTokenProvider.getUserId(token);
+
+        List<TripResponse.TripListDTO> result = tripService.getEventsByMonth(userId, year, month);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/event/{id}")
+    @Operation(summary = "특정 일정 상세 조회 API", description = "tripId 입력시 해당 여행일정 상세 정보 조회")
+    public ResponseEntity<List<TripResponse.TripInfoDTO>> getEvent(
+            @RequestHeader("Authorization") String token,
+            @PathVariable(required = true) Long id) {
+
+        // 1. 토큰 확인
+        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
+
+        // 2. 토큰 -> 사용자 아이디
+        Long userId = jwtTokenProvider.getUserId(token);
+
+        List<TripResponse.TripInfoDTO> events = tripService.getEvents(userId, id);
+        return ResponseEntity.ok(events);
+    }
+
     @PostMapping("/event")
     @Operation(summary = "일정 추가 API", description = "제목, 설명, 시작일, 마지막일 입력하면 일정 ID 반환 - 다이어리 자동 생성")
     public ResponseEntity<TripResponse.TripInfoDTO> createTrip(
@@ -86,21 +118,6 @@ public class TripController {
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
-    }
-
-    @GetMapping("/event/{id}")
-    @Operation(summary = "일정 조회 API", description = "tripID 입력 시 여행 정보 반환 - 조건이 없으면 사용자의 모든 일정 반환")
-    public ResponseEntity<List<TripResponse.TripInfoDTO>> getEvent(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long id) {
-
-        // 1. 토큰 확인
-        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
-
-        // 2. 토큰 -> 사용자 아이디
-        Long userId = jwtTokenProvider.getUserId(token);
-        List<TripResponse.TripInfoDTO> events = tripService.getEvents(userId, id);
-        return ResponseEntity.ok(events);
     }
 }
 
