@@ -5,6 +5,7 @@ import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.*;
 import com.skuniv.fuwarilog.dto.Post.PostResponse;
 import com.skuniv.fuwarilog.dto.PostBookmark.PostBookmarkResponse;
+import com.skuniv.fuwarilog.dto.PostLike.PostLikeResponse;
 import com.skuniv.fuwarilog.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ public class PostService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final PostBookmarkRepository postBookmarkRepository;
+    private final PostLikeRepository postLikeRepository;
 
     /**
      * @implSpec 게시글 조회
@@ -73,6 +75,34 @@ public class PostService {
             }
 
             return PostBookmarkResponse.PostBookmarkStateDTO.from(postBookmark);
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
+        }
+    }
+
+    public PostLikeResponse.PostLikesStateDTO editPostLikes(Long userId, long postId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+            Post post = postRepository.findById(postId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_POST));
+
+            PostLike postLike = postLikeRepository.findByUserIdAndPostId(userId, postId);
+
+            if(postLike == null) {
+                postLike = PostLike.builder()
+                        .post(post)
+                        .user(user)
+                        .build();
+                postLikeRepository.save(postLike);
+            } else {
+                postLikeRepository.delete(postLike);
+            }
+
+            return PostLikeResponse.PostLikesStateDTO.from(postLike);
 
         } catch (Exception e) {
             log.error(e.getMessage());
