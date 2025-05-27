@@ -4,6 +4,7 @@ import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.*;
 import com.skuniv.fuwarilog.dto.Post.PostResponse;
+import com.skuniv.fuwarilog.dto.PostBookmark.PostBookmarkResponse;
 import com.skuniv.fuwarilog.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ public class PostService {
 
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final PostBookmarkRepository postBookmarkRepository;
 
     /**
      * @implSpec 게시글 조회
@@ -36,6 +38,41 @@ public class PostService {
             return post.stream()
                     .map(PostResponse.PostListDTO::from)
                     .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
+        }
+    }
+
+    /**
+     * @implSpec 게시글 북마크 수정
+     * @param userId 사용자 고유 번호
+     * @param postId 게시글 고유 번호
+     * @param state 북마크 상태 값
+     * @return PostBookmarkResponse.PostBookmarkStateDTO 게시글 북마크 상태
+     */
+    public PostBookmarkResponse.PostBookmarkStateDTO editPostBookmark(Long userId, long postId, boolean state) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+            Post post = postRepository.findById(postId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_POST));
+
+            PostBookmark postBookmark = postBookmarkRepository.findByUserIdAndPostId(userId, postId);
+
+            if(!state) {
+                postBookmarkRepository.delete(postBookmark);
+            } else {
+                postBookmark = PostBookmark.builder()
+                        .post(post)
+                        .user(user)
+                        .build();
+                postBookmarkRepository.save(postBookmark);
+            }
+
+            return PostBookmarkResponse.PostBookmarkStateDTO.from(postBookmark);
 
         } catch (Exception e) {
             log.error(e.getMessage());
