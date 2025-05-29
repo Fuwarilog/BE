@@ -15,19 +15,16 @@ public class PostBookmarkResponse {
     @Builder
     @Schema(title = "RES 01: 게시글 북마크 상태 반환 DTO")
     public static class PostBookmarkStateDTO {
-        private long bookmarkId;
         private long postId;
         private long userId;
-        private LocalDateTime createdAt;
-        private LocalDateTime updatedAt;
+        private boolean bookmarked;
 
-        public static PostBookmarkStateDTO from(PostBookmark postBookmark) {
-            return new  PostBookmarkStateDTO(
-                    postBookmark.getId(),
-                    postBookmark.getPost().getId(),
-                    postBookmark.getUser().getId(),
-                    postBookmark.getCreatedAt(),
-                    postBookmark.getUpdatedAt());
+        public static PostBookmarkStateDTO of(long postId, long userId, boolean bookmarked) {
+            return PostBookmarkStateDTO.builder()
+                    .postId(postId)
+                    .userId(userId)
+                    .bookmarked(bookmarked)
+                    .build();
         }
     }
 }

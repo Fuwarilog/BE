@@ -63,17 +63,22 @@ public class PostService {
 
             PostBookmark postBookmark = postBookmarkRepository.findByUserIdAndPostId(userId, postId);
 
+            boolean bookmarked;
+
             if(postBookmark == null) {
                 postBookmark = PostBookmark.builder()
                         .post(post)
                         .user(user)
                         .build();
                 postBookmarkRepository.save(postBookmark);
+                bookmarked = true;
+
             } else {
                 postBookmarkRepository.delete(postBookmark);
+                bookmarked = false;
             }
 
-            return PostBookmarkResponse.PostBookmarkStateDTO.from(postBookmark);
+            return PostBookmarkResponse.PostBookmarkStateDTO.of(postId, userId, bookmarked);
 
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -97,17 +102,22 @@ public class PostService {
 
             PostLike postLike = postLikeRepository.findByUserIdAndPostId(userId, postId);
 
+            // 좋아요 상태 반환 객체
+            boolean liked;
+
             if(postLike == null) {
                 postLike = PostLike.builder()
                         .post(post)
                         .user(user)
                         .build();
                 postLikeRepository.save(postLike);
+                liked = true;
             } else {
                 postLikeRepository.delete(postLike);
+                liked = false;
             }
 
-            return PostLikeResponse.PostLikesStateDTO.from(postLike);
+            return PostLikeResponse.PostLikesStateDTO.of(postId, userId, liked);
 
         } catch (Exception e) {
             log.error(e.getMessage());
