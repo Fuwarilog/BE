@@ -3,6 +3,7 @@ package com.skuniv.fuwarilog.dto.User;
 import com.skuniv.fuwarilog.domain.PostBookmark;
 import com.skuniv.fuwarilog.domain.PostLike;
 import com.skuniv.fuwarilog.domain.User;
+import com.skuniv.fuwarilog.dto.PostBookmark.PostBookmarkResponse;
 import com.skuniv.fuwarilog.dto.PostLike.PostLikeResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -45,5 +46,15 @@ public class UserResponse {
     public static class UserPostLikeDTO {
         Long userId;
         List<PostLikeResponse.PostLikesStateDTO>  postLikes;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(title = "RES 03: 사용자 게시글 북마크 리스트 전달 DTO")
+    public static class UserBookmarkDTO {
+        Long userId;
+        List<PostBookmarkResponse.PostBookmarkStateDTO> postBookmarks;
     }
 }

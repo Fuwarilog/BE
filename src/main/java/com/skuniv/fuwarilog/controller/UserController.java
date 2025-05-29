@@ -6,7 +6,6 @@ import com.skuniv.fuwarilog.domain.User;
 import com.skuniv.fuwarilog.dto.User.UserRequest;
 import com.skuniv.fuwarilog.dto.User.UserResponse;
 import com.skuniv.fuwarilog.repository.UserRepository;
-import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,8 +18,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-
 @Slf4j
 @Tag(name = "User API", description = "사용자 관련 API")
 @RestController
@@ -29,7 +26,6 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
-    private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
 
     @GetMapping("/my-info")
@@ -74,6 +70,20 @@ public class UserController {
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
         UserResponse.UserPostLikeDTO result = userService.getPostLikesByUser(user.getId());
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/my-bookmark-post")
+    @Operation(summary = "북마크한 게시글 조회", description = "성공시 북마크한 게시글 리스트 반환")
+    public ResponseEntity<UserResponse.UserBookmarkDTO> getPostBookmarksByUser (
+            Authentication authentication) {
+
+        String email = (String) authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        UserResponse.UserBookmarkDTO result = userService.getPostBookmarksByUser(user.getId());
         return ResponseEntity.ok(result);
     }
 }
