@@ -2,9 +2,11 @@ package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
+import com.skuniv.fuwarilog.domain.PostLike;
 import com.skuniv.fuwarilog.domain.User;
 import com.skuniv.fuwarilog.dto.User.UserRequest;
 import com.skuniv.fuwarilog.dto.User.UserResponse;
+import com.skuniv.fuwarilog.repository.PostLikeRepository;
 import com.skuniv.fuwarilog.repository.UserRepository;
 import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import jakarta.transaction.Transactional;
@@ -21,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -31,6 +34,7 @@ public class UserService {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final PostLikeRepository postLikeRepository;
     private UserRepository userRepository;
 
     /**
@@ -88,6 +92,17 @@ public class UserService {
         } catch (IOException e) {
             log.error(e.getMessage());
             throw new BadRequestException(ErrorResponseStatus.SAVE_PROFILE_IMAGE_ERROR);
+        }
+    }
+
+    public UserResponse.UserPostLikeDTO getPostLikesByUser(Long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+            List<PostLike> postLikes = postLikeRepository.findAllByUser(user);
+
+            return
         }
     }
 }
