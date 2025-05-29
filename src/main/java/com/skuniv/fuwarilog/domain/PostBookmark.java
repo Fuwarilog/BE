@@ -23,7 +23,4 @@ public class PostBookmark extends BaseEntity{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
-
-    @Column(name = "content_id")
-    private long contentId;
 }

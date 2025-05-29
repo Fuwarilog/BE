@@ -48,7 +48,7 @@ public class TripService {
             LocalDate startDate = LocalDate.of(year, month, 1);
             LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
-            List<Trip> trips = tripRepository.findAllByUserAndStartDateBetween(user, startDate, endDate);
+            List<Trip> trips = tripRepository.findAllByUserAndStartDateLessThanEqualAndEndDateGreaterThanEqual(user, endDate, startDate);
 
             return trips.stream()
                     .map(TripResponse.TripListDTO::from)

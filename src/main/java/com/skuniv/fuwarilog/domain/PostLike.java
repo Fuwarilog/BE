@@ -3,6 +3,7 @@ package com.skuniv.fuwarilog.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+@Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -21,8 +22,4 @@ public class PostLike extends BaseEntity{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
-
-    @Column(name = "content_id")
-    private long contentId;
-
 }
