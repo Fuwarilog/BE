@@ -65,15 +65,15 @@ public class UserController {
 
     @GetMapping("/my-like-post")
     @Operation(summary = "좋아요한 게시글 조회", description = "성공시 좋아요한 게시글 리스트 반환")
-    public ResponseEntity<List<UserResponse.UserPostLikeDTO>> getPostLikesByUser (
-            @RequestHeader("Authorization") String token) {
-        // 1. 토큰 확인
-        if(!jwtTokenProvider.validateToken(token)) { throw new BadRequestException(ErrorResponseStatus.INVALID_TOKEN); }
+    public ResponseEntity<UserResponse.UserPostLikeDTO> getPostLikesByUser (
+            Authentication authentication) {
 
-        // 2. 토큰 -> 사용자 Id 반환
-        Long userId = jwtTokenProvider.getUserId(token);
+        String email = (String) authentication.getName();
 
-        List<UserResponse.UserPostLikeDTO> result = userService.getPostLikesByUser(userId);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        UserResponse.UserPostLikeDTO result = userService.getPostLikesByUser(user.getId());
         return ResponseEntity.ok(result);
     }
 }

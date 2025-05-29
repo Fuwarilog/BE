@@ -4,6 +4,7 @@ import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.PostLike;
 import com.skuniv.fuwarilog.domain.User;
+import com.skuniv.fuwarilog.dto.PostLike.PostLikeResponse;
 import com.skuniv.fuwarilog.dto.User.UserRequest;
 import com.skuniv.fuwarilog.dto.User.UserResponse;
 import com.skuniv.fuwarilog.repository.PostLikeRepository;
@@ -26,6 +27,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -95,6 +97,11 @@ public class UserService {
         }
     }
 
+    /**
+     * @implSpec 사용자 게시글 좋아요 리스트 반환
+     * @param userId 사용자 고유 번호
+     * @return UserResponse.UserPostLikeDTO 사용자 좋아요 게시글 리스트 반환
+     */
     public UserResponse.UserPostLikeDTO getPostLikesByUser(Long userId) {
         try {
             User user = userRepository.findById(userId)
@@ -102,7 +109,19 @@ public class UserService {
 
             List<PostLike> postLikes = postLikeRepository.findAllByUser(user);
 
-            return
+            return UserResponse.UserPostLikeDTO.builder()
+                    .userId(userId)
+                    .postLikes(postLikes.stream()
+                            .map(postLike -> {
+                                return PostLikeResponse.PostLikesStateDTO.builder()
+                                        .postId(postLike.getPost().getId())
+                                        .userId(postLike.getUser().getId())
+                                        .build();
+                            }).collect(Collectors.toList())
+                    ).build();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
     }
 }
