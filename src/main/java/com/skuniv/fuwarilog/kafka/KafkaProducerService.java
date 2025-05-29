@@ -35,13 +35,13 @@ public class KafkaProducerService {
     /**
      * @implSpec 실시간 환율 데이터 연동 및 전달
      */
-    @Scheduled(cron = "0 0/1 * * * *")
+    @Scheduled(cron = "0 0/30 * * * *")
     public void fetchAndSendExchangeRates() {
         // 환율 실시간 API 연동
         try{
             log.info("Start fetchAndSendExchangeRates");
 
-            for (LocalDate date = LocalDate.parse("2024-12-31"); date.isEqual(LocalDate.now()); date = date.plusDays(1)) {
+            for (LocalDate date = LocalDate.parse("2024-12-31"); !date.isEqual(LocalDate.now()); date = date.plusDays(1)) {
                 String uri = UriComponentsBuilder.fromHttpUrl("https://www.koreaexim.go.kr/site/program/financial/exchangeJSON")
                         .queryParam("authkey", apiKey)
                         .queryParam("searchdate", date)
@@ -55,7 +55,7 @@ public class KafkaProducerService {
 
                 log.info(response.getBody());
 
-                List<String> currency = Arrays.asList("USD", "JPY", "CNY", "KRW");
+                List<String> currency = Arrays.asList("USD", "JPY(100)", "CNH", "KRW", "CNY");
 
                 if (response.getStatusCode() == HttpStatus.OK) {
                     ObjectMapper mapper = new ObjectMapper();
