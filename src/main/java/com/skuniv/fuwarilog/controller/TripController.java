@@ -60,6 +60,20 @@ public class TripController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/event/schedule")
+    @Operation(summary = "일주일 뒤의 예정된 일정 목록 조회 API", description = "오늘 날짜로부터 일주일 뒤의 여행일정 최대 3개 반환")
+    public ResponseEntity<List<TripResponse.TripListDTO>> getEventsByNextWeek (
+            Authentication authentication) {
+
+        String email = (String) authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        List<TripResponse.TripListDTO> result = tripService.getEventsByNextWeek(user.getId());
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/event/{id}")
     @Operation(summary = "특정 일정 상세 조회 API", description = "tripId 입력시 해당 여행일정 상세 정보 조회")
     public ResponseEntity<List<TripResponse.TripInfoDTO>> getEvent(
