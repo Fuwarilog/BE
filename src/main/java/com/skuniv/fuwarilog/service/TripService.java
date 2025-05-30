@@ -61,6 +61,30 @@ public class TripService {
     }
 
     /**
+     * @implSpec 구글켈린더에 현재 일정 조회
+     * @param userId 사용자 고유 번호
+     * @return result 연도, 월의 여행일정 목록 반환
+     * */
+    public List<TripResponse.TripListDTO> getEventsByToday(long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+            LocalDate today = LocalDate.parse("2025-05-21");
+
+            List<Trip> trips = tripRepository.findAllByUserAndToday(user, today);
+
+            return trips.stream()
+                    .map(TripResponse.TripListDTO::from)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.TRIP_NOT_FOUND);
+        }
+    }
+
+    /**
      * @implSpec 구글켈린더에 맞는 서버 Trip 데이터 생성
      * @param title 일정 제목 & 다이어리 제목 (연동되어 동일)
      * @param description 다이어리 간단 설명
