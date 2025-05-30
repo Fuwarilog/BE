@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Tag(name = "Calendar(Trip) API", description = "여행일정 관련(캘린더) 조회, 수정, 삭제")
@@ -42,6 +43,34 @@ public class TripController {
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
         List<TripResponse.TripListDTO> result = tripService.getEventsByMonth(user.getId(), year, month);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/event/today")
+    @Operation(summary = "현재 여행 일정 목록 조회 API", description = "오늘 날짜에 해당하는 여행일정 반환")
+    public ResponseEntity<List<TripResponse.TripListDTO>> getEventsByToday (
+            Authentication authentication) {
+
+        String email = (String) authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        List<TripResponse.TripListDTO> result = tripService.getEventsByToday(user.getId());
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/event/schedule")
+    @Operation(summary = "일주일 뒤의 예정된 일정 목록 조회 API", description = "오늘 날짜로부터 일주일 뒤의 여행일정 최대 3개 반환")
+    public ResponseEntity<List<TripResponse.TripListDTO>> getEventsByNextWeek (
+            Authentication authentication) {
+
+        String email = (String) authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        List<TripResponse.TripListDTO> result = tripService.getEventsByNextWeek(user.getId());
         return ResponseEntity.ok(result);
     }
 
