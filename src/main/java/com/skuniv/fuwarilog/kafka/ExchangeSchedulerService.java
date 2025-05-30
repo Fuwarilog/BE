@@ -19,8 +19,8 @@ public class ExchangeSchedulerService {
      */
     @Scheduled(cron = "0 0 0 * * ?")
     public void deleteOldRates() {
-        LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
-        int result = exchangeRateRepository.deleteByTimestampBefore(threeMonthsAgo);
-        log.info("3개월 이상된 환율 {}개 삭제", result);
+        LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
+        int result = exchangeRateRepository.deleteByTimestampBefore(sixMonthsAgo);
+        log.info("6개월 이상된 환율 {}개 삭제", result);
     }
 }
