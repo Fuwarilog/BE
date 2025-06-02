@@ -36,7 +36,7 @@ public class CustomOAuth2SuccessHandler  extends SimpleUrlAuthenticationSuccessH
         // AccessToken 쿠키
         Cookie accessCookie = new Cookie("access_token", accessToken);
         accessCookie.setPath("/");
-        accessCookie.setMaxAge(60 * 60 * 24);
+        accessCookie.setMaxAge(60 * 60 * 24 * 7); // 개발 기간중 시간 늘림 -> 추후 변경 예정
         accessCookie.setHttpOnly(true);
         accessCookie.setSecure(true);
 
