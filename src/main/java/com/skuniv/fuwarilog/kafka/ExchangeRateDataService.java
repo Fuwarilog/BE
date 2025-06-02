@@ -7,11 +7,11 @@ import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.ExchangeRate;
 import com.skuniv.fuwarilog.dto.ExchangeRate.ExchangeRateRequest;
 import com.skuniv.fuwarilog.repository.ExchangeRateRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -20,6 +20,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -28,10 +29,11 @@ import java.util.Map;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Transactional
 public class ExchangeRateDataService {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final RestTemplate restTemplate = new RestTemplate();
+    //private final KafkaTemplate<String, String> kafkaTemplate;
+    private final RestTemplate restTemplate;
     private final ExchangeRateRepository exchangeRateRepository;
 
     @Value("${exchange.api.key}")
@@ -40,23 +42,31 @@ public class ExchangeRateDataService {
     /**
      * @implSpec 실시간 환율 데이터 연동 및 전달
      */
-    @Scheduled(cron = "0 0/30 * * * *")
+    @Scheduled(cron = "0/5 * * * * *")
     public void fetchAndSendExchangeRates() {
         // 환율 실시간 API 연동
         try{
             log.info("[1] Start fetchAndSendExchangeRates");
 
-            for (LocalDate date = LocalDate.parse("2024-12-31"); !date.isEqual(LocalDate.now()); date = date.plusDays(1)) {
-                String uri = UriComponentsBuilder.fromHttpUrl("https://www.koreaexim.go.kr/site/program/financial/exchangeJSON")
+            for (LocalDate date = LocalDate.parse("2024-12-31", DateTimeFormatter.ofPattern("yyyy-MM-dd")); !date.isEqual(LocalDate.now()); date = date.plusDays(1)) {
+                log.info(date.toString());
+
+                String formattedDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+                String uri = UriComponentsBuilder.fromUriString("https://www.koreaexim.go.kr/site/program/financial/exchangeJSON")
                         .queryParam("authkey", apiKey)
-                        .queryParam("searchdate", date)
+                        .queryParam("searchdate", formattedDate)
                         .queryParam("data", "AP01")
                         .toUriString();
 
                 log.info("[2] Fetching exchange rates from Kafka ...");
                 log.info(uri);
 
-                ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("User-Agent", "Mozilla/5.0");
+                HttpEntity<String> entity = new HttpEntity<>(headers);
+
+                ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, entity, String.class);
 
                 List<String> currency = Arrays.asList("USD", "JPY(100)", "CNH");
                 Map<String, String> CurrencyToCountry = new HashMap<>() {{
@@ -64,7 +74,6 @@ public class ExchangeRateDataService {
                     put("JPY", "일본");
                     put("CHN", "중국");
                 }};
-
 
                 if (response.getStatusCode() == HttpStatus.OK) {
                     ObjectMapper mapper = new ObjectMapper();
@@ -88,21 +97,13 @@ public class ExchangeRateDataService {
 
                             log.info("[3] 데이터베이스에 저장...");
 
-//                            String json = mapper.writeValueAsString(dto);
-//                            kafkaTemplate.send("exchange_value_rate", dto.getCurUnit(), json)
-//                                    .whenComplete((result, e) -> {
-//                                        if (e != null) {
-//                                            log.error(e.getMessage());
-//                                        } else {
-//                                            log.info(result.toString());
-//                                        }
-//                                    });
                             ExchangeRate exchangeRate = new ExchangeRate();
                             exchangeRate.setCurNm(CurrencyToCountry.get(dto.getCurUnit()));
                             exchangeRate.setCurUnit(dto.getCurUnit());
                             exchangeRate.setTimestamp(LocalDateTime.parse(dto.getTimeStamp()));
 
                             exchangeRateRepository.save(exchangeRate);
+                            log.info("[4] 데이터베이스에 저장 완료");
                         }
                     }
                 }

@@ -34,9 +34,4 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/static/profile/**", "/static/diary/**")
                 .addResourceLocations("file:uploads/profile/", "file:uploads/diary/");
     }
-
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
 }
