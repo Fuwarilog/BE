@@ -14,6 +14,8 @@ import com.skuniv.fuwarilog.repository.TripRepository;
 import com.skuniv.fuwarilog.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -49,6 +51,56 @@ public class TripService {
             LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
             List<Trip> trips = tripRepository.findAllByUserAndStartDateLessThanEqualAndEndDateGreaterThanEqual(user, endDate, startDate);
+
+            return trips.stream()
+                    .map(TripResponse.TripListDTO::from)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.TRIP_NOT_FOUND);
+        }
+    }
+
+    /**
+     * @implSpec 구글켈린더에 현재 일정 조회
+     * @param userId 사용자 고유 번호
+     * @return result 오늘로부터 일주일 뒤의 여행일정 최대 3개 반환
+     * */
+    public List<TripResponse.TripListDTO> getEventsByToday(long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+            LocalDate today = LocalDate.now();
+
+            List<Trip> trips = tripRepository.findAllByUserAndToday(user, today);
+
+            return trips.stream()
+                    .map(TripResponse.TripListDTO::from)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.TRIP_NOT_FOUND);
+        }
+    }
+
+    /**
+     * @implSpec 구글켈린더에 현재 일정 조회
+     * @param userId 사용자 고유 번호
+     * @return result 연도, 월의 여행일정 목록 반환
+     * */
+    public List<TripResponse.TripListDTO> getEventsByNextWeek(long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+            LocalDate today = LocalDate.now();
+
+            Pageable pageable = PageRequest.of(0, 3);
+
+            List<Trip> trips = tripRepository.findTop3ByUserAndStartDateOrderByStartDate(user, today, pageable);
 
             return trips.stream()
                     .map(TripResponse.TripListDTO::from)
