@@ -28,7 +28,7 @@ import java.util.Map;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class KafkaProducerService {
+public class ExchangeRateDataService {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final RestTemplate restTemplate = new RestTemplate();
@@ -40,7 +40,7 @@ public class KafkaProducerService {
     /**
      * @implSpec 실시간 환율 데이터 연동 및 전달
      */
-    @Scheduled(cron = "0 0/1 * * * *")
+    @Scheduled(cron = "0 0/30 * * * *")
     public void fetchAndSendExchangeRates() {
         // 환율 실시간 API 연동
         try{
@@ -59,7 +59,7 @@ public class KafkaProducerService {
                 ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
                 List<String> currency = Arrays.asList("USD", "JPY(100)", "CNH");
-                Map<String, String> CurrencyToCountry = new HashMap<String, String>() {{
+                Map<String, String> CurrencyToCountry = new HashMap<>() {{
                     put("USD", "미국");
                     put("JPY", "일본");
                     put("CHN", "중국");
