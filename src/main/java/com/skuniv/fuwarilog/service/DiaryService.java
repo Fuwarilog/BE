@@ -125,6 +125,8 @@ public class DiaryService {
             if (image != null && !image.isEmpty()) {
                 String imageUrl = storeDiaryImage(image);
                 content.setImageUrls(List.of(imageUrl));
+            } else {
+                content.setImageUrls(null);
             }
 
             return diaryContentRepository.save(content);
