@@ -13,22 +13,29 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor(access= AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(name= "location")
 public class Location extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "location_id", nullable = false)
+    @Column(name = "location_id")
     private long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(name = "place_id")
+    private String placeId;
+
     @Column(name = "place_name", columnDefinition = "VARCHAR(255)")
     private String placeName;
 
     @Column(name = "address", columnDefinition = "VARCHAR(255)")
     private String address;
+
+    @Column(name = "placeUrl", columnDefinition = "VARCHAR(255)")
+    private String placeUrl;
 
     @Column(name = "latitude")
     private double latitude;
@@ -41,8 +48,4 @@ public class Location extends BaseEntity {
 
     @Column(name = "bookmarked_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime bookmarkedAt;
-
-    @Column(name = "trip_date")
-    private LocalDate tripDate;
-
 }

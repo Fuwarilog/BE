@@ -1,6 +1,7 @@
 package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
+import com.skuniv.fuwarilog.config.exception.ErrorResponse;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.*;
 import com.skuniv.fuwarilog.dto.Location.LocationRequest;
@@ -92,7 +93,8 @@ public class LocationService {
                 Map<String, Object> location = (Map<String, Object>) geometry.get("location");
                 double lat = ((Number) location.get("lat")).doubleValue();
                 double lng = ((Number) location.get("lng")).doubleValue();
-                places.add(new LocationResponse.PlaceDTO(name, lat, lng));
+                String placeId = (String) place.get("place_id");
+                places.add(new LocationResponse.PlaceDTO(name, lat, lng, placeId));
             }
         }
         return places;
@@ -104,40 +106,75 @@ public class LocationService {
      * @param dto 북마크 요청 DTO
      */
     public LocationResponse.LocationInfoDTO saveBookmark(Long userId, LocationRequest.LocationBookmarkReqDTO dto) {
-        // 1. 사용자 확인
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+        try {
+            // 1. 사용자 확인
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
-        // 2. 북마크 장소 추가
-        Location location = Location.builder()
-                .user(user)
-                .placeName(dto.getName())
-                .latitude(dto.getLatitude())
-                .longitude(dto.getLongitude())
-                .bookmarked(true)
-                .bookmarkedAt(LocalDateTime.now())
-                .build();
-        locationRepository.save(location);
+            Location location = locationRepository.findByUserIdAndPlaceId(userId, dto.getPlaceId());
 
-        // 3. 다이어리 내용에 태그 삽입
-        Optional<DiaryContent> contentOpt = diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
+            if (location == null) {
 
-        if (contentOpt.isPresent()) {
-            DiaryContent content = contentOpt.get();
-            String currentContent = content.getContent();
+                // 2. 북마크 장소 추가
+                location = Location.builder()
+                        .user(user)
+                        .placeId(dto.getPlaceId())
+                        .placeName(dto.getName())
+                        .latitude(dto.getLatitude())
+                        .longitude(dto.getLongitude())
+                        .bookmarked(true)
+                        .bookmarkedAt(LocalDateTime.now())
+                        .build();
+                locationRepository.save(location);
+            } else {
+                throw new BadRequestException(ErrorResponseStatus.ALREADY_EXIST_LOCATION);
+            }
+
+            // 3. 다이어리 내용에 태그 삽입
+            List<DiaryContent> contentOpt = diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
+            DiaryContent content = contentOpt.stream().findFirst()
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
+
             DiaryList list = diaryListRepository.findById(content.getDiaryListId())
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
             // 이미 존재하는 태그인지 확인
-            String tagToAdd = "#" + location.getPlaceName().replaceAll("\\s+", "");
-            if (!currentContent.contains(tagToAdd)) {
-                String updatedContent = currentContent + "\n" + tagToAdd;
-                content.setContent(updatedContent);
+            String tagText = "#" + location.getPlaceName().replaceAll("\\s+", "");
+            boolean tagExists = content.getTags() != null && content.getTags().stream()
+                    .anyMatch(tag -> tag.getTagText().equals(tagText));
+
+            if (!tagExists) {
+                LocationTag tag = LocationTag.builder()
+                        .placeName(location.getPlaceName())
+                        .placeUrl(location.getPlaceUrl())
+                        .address(location.getAddress())
+                        .latitude(location.getLatitude())
+                        .longitude(location.getLongitude())
+                        .tagText(tagText)
+                        .build();
+
+                if (content.getTags() == null) {
+                    content.setTags(new ArrayList<>());
+                }
+                content.getTags().add(tag);
+
+                String currentContent = Optional.ofNullable(content.getContent()).orElse("");
+                log.info(currentContent);
+                if (!currentContent.contains(tagText)) {
+                    String updatedContent = tagText + "\n" + currentContent;
+                    log.info(updatedContent);
+                    content.setContent(updatedContent);
+                }
                 list.setUpdatedAt(LocalDateTime.now()); // diarycontent가 아닌 DiaryList의 uodatedAt을 업데이트 해야한다.
                 diaryContentRepository.save(content);
             }
+
+            return LocationResponse.LocationInfoDTO.from(location);
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
         }
-        return LocationResponse.LocationInfoDTO.from(location);
     }
 
     public void deleteBookmark(Long userId, Long locationId) {
@@ -148,21 +185,19 @@ public class LocationService {
         locationRepository.save(location);
 
         // 다이어리에서 태그 제거
-        Optional<DiaryContent> contentOpt =
-                diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
+        List<DiaryContent> contentOpt = diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
+        DiaryContent content = contentOpt.stream().findFirst()
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
 
-        if (contentOpt.isPresent()) {
-            DiaryContent content = contentOpt.get();
-            String currentContent = content.getContent();
-            DiaryList list = diaryListRepository.findById(content.getDiaryListId())
-                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+        String currentContent = content.getContent();
+        DiaryList list = diaryListRepository.findById(content.getDiaryListId())
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
-            String tagToRemove = "#" + location.getPlaceName().replaceAll("\\s+", "");
-            String updatedContent = currentContent.replace(tagToRemove, "").replaceAll("(?m)^\\s*$[\r\n]+", ""); // 빈 줄 정리
-            content.setContent(updatedContent.trim());
-            list.setUpdatedAt(LocalDateTime.now());
-            diaryContentRepository.save(content);
-        }
+        String tagToRemove = "#" + location.getPlaceName().replaceAll("\\s+", "");
+        String updatedContent = currentContent.replace(tagToRemove, "").replaceAll("(?m)^\\s*$[\r\n]+", ""); // 빈 줄 정리
+        content.setContent(updatedContent.trim());
+        list.setUpdatedAt(LocalDateTime.now());
+        diaryContentRepository.save(content);
     }
 
     /**

@@ -14,6 +14,7 @@ public enum ErrorResponseStatus {
     INVALID_TOKEN(2005, "잘못된 인증 토큰입니다."),
     INVALID_SECRET_FILE(2006, "잘못된 SECRET 파일입니다."),
     ALREADY_EXIST_CONTENT(2007, "이미 존재하는 다이어리 내용입니다."),
+    ALREADY_EXIST_LOCATION(2008, "이미 북마크된 장소입니다."),
 
     RESPONSE_ERROR(3000, "값을 불러오는데 실패했습니다."),
     SVAE_DIARY_IMAGE_ERROR(3001, "다이어리 이미지 저장 실패"),
