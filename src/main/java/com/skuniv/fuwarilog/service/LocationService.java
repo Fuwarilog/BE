@@ -70,34 +70,86 @@ public class LocationService {
 
     /**
      * @implSpec 검색어에 따른 장소 리스트 반환
-     * @param keyword 검색 단어
+     * @param dto 검색 단어
      * @return places 장소명, 주소, 위치
      */
-    public List<LocationResponse.PlaceDTO> searchPlaces(String keyword) {
+    public List<LocationResponse.PlaceDTO> searchPlaces(LocationRequest.LocationSearchDTO dto) {
+
+        // 1. 위치 정보 검증
+        validatedLocationRequest(dto);
+
+        double currentLat = dto.getLatitude();
+        double currentLng = dto.getLongitude();
+        int radius = dto.getRadius();
+
         URI uri = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/place/textsearch/json")
-                .queryParam("query", keyword)
+                .queryParam("query", dto.getKeyword())
+                .queryParam("locationbias", "circle:" + radius + "@" +  currentLat + "," + currentLng)
+                .queryParam("fields", "name,formatted_address,geometry,rating,price_level")
                 .queryParam("key", apiKey)
                 .build()
                 .toUri();
 
         log.info(uri.toString());
 
-        Map<String, Object> response = restTemplate.getForObject(uri, Map.class);
-        List<Map<String, Object>> results = (List<Map<String, Object>>) response.get("results");
-
-        List<LocationResponse.PlaceDTO> places = new ArrayList<>();
-        if(results != null) {
-            for(Map<String, Object> place : results) {
-                String name = (String) place.get("name");
-                Map<String, Object> geometry = (Map<String, Object>) place.get("geometry");
-                Map<String, Object> location = (Map<String, Object>) geometry.get("location");
-                double lat = ((Number) location.get("lat")).doubleValue();
-                double lng = ((Number) location.get("lng")).doubleValue();
-                String placeId = (String) place.get("place_id");
-                places.add(new LocationResponse.PlaceDTO(name, lat, lng, placeId));
+        try {
+            Map<String, Object> response = restTemplate.getForObject(uri, Map.class);
+            if (response == null) {
+                log.error("Google Places API returned null");
+                return new ArrayList<>();
             }
+
+            String status = (String) response.get("status");
+            if (!"OK".equals(status) && !"ZERO_RESULTS".equals(status)) {
+                log.error("Google Places API error: {}", status);
+                throw new RuntimeException("Google Places API returned status " + status);
+            }
+
+            List<Map<String, Object>> results = (List<Map<String, Object>>) response.get("results");
+            List<LocationResponse.PlaceDTO> places = new ArrayList<>();
+
+            if (results != null) {
+                for (Map<String, Object> place : results) {
+                    String name = (String) place.get("name");
+                    String address = (String) place.get("formatted_address");
+
+                    Map<String, Object> geometry = (Map<String, Object>) place.get("geometry");
+                    Map<String, Object> location = (Map<String, Object>) geometry.get("location");
+
+                    double lat = ((Number) location.get("lat")).doubleValue();
+                    double lng = ((Number) location.get("lng")).doubleValue();
+                    String placeId = (String) place.get("place_id");
+
+                    places.add(new LocationResponse.PlaceDTO(name, lat, lng, placeId));
+                }
+            }
+            return places;
+        } catch (Exception e) {
+            log.error("Exception: ", e);
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
-        return places;
+    }
+
+    private void validatedLocationRequest(LocationRequest.LocationSearchDTO dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("DTO is null");
+        }
+
+        if (dto.getKeyword() == null || dto.getKeyword().trim().isEmpty()) {
+            throw new IllegalArgumentException("Keyword is null or empty");
+        }
+
+        if (dto.getLongitude()) {
+            throw new IllegalArgumentException("Location is null or empty");
+        }
+
+        if (dto.getLongitude() < -90 || dto.getLongitude() > 90) {
+            throw new IllegalArgumentException("Location is invalid range");
+        }
+
+        if (dto.getRadius() != null && (dto.getRadius() < 100 || dto.getRadius() > 50000)) {
+            throw new IllegalArgumentException("Location is out of range");
+        }
     }
 
     /**
