@@ -267,7 +267,11 @@ public class LocationService {
                 .queryParam("origin", dto.getOrigin())
                 .queryParam("destination", dto.getDestination())
                 .queryParam("mode", "transit")
+                .queryParam("transit_mode", "subway|bus")
+                .queryParam("departure_time", "now")
+                .queryParam("traffic_model", "best_guess")
                 .queryParam("key", apiKey)
+                .build()
                 .toUriString();
 
         Map<String, Object> response = restTemplate.getForObject(url, Map.class);
