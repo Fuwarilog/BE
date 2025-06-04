@@ -2,16 +2,10 @@ package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.domain.Diary;
-import com.skuniv.fuwarilog.domain.DiaryList;
-import com.skuniv.fuwarilog.domain.Trip;
-import com.skuniv.fuwarilog.domain.User;
+import com.skuniv.fuwarilog.domain.*;
 import com.skuniv.fuwarilog.dto.Trip.TripRequest;
 import com.skuniv.fuwarilog.dto.Trip.TripResponse;
-import com.skuniv.fuwarilog.repository.DiaryListRepository;
-import com.skuniv.fuwarilog.repository.DiaryRepository;
-import com.skuniv.fuwarilog.repository.TripRepository;
-import com.skuniv.fuwarilog.repository.UserRepository;
+import com.skuniv.fuwarilog.repository.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +28,7 @@ public class TripService {
     private final UserRepository userRepository;
     private final DiaryRepository diaryRepository;
     private final DiaryListRepository diaryListRepository;
+    private final DiaryContentRepository diaryContentRepository;
 
     /**
      * @implSpec 구글켈린더에 월별 일정 조회
@@ -139,7 +134,7 @@ public class TripService {
                 .build();
         tripRepository.save(newTrip);
 
-        // ** 여행 일정 생성 시 자동으로 다이어리 생성되게끔 만들어야함
+        // 여행 일정 생성 시 자동으로 다이어리 생성되게끔 만들어야함
         Diary newDiary = Diary.builder()
                 .trip(newTrip)
                 .title(title)
@@ -155,6 +150,13 @@ public class TripService {
                     .date(d)
                     .build();
             diaryListRepository.save(newDiaries);
+
+            DiaryContent newDiaryContent = DiaryContent.builder()
+                    .userId(user.getId())
+                    .diaryListId(newDiaries.getId())
+                    .tripDate(d)
+                    .build();
+            diaryContentRepository.save(newDiaryContent);
         }
 
         return TripResponse.TripInfoDTO.builder()
@@ -275,9 +277,16 @@ public class TripService {
 
             // 추가된 일정의 다이어리 생성
             for(LocalDate d : toAdd) {
-                diaryListRepository.save(DiaryList.builder()
+                DiaryList addDiaryList = DiaryList.builder()
                         .diary(diary)
                         .date(d)
+                        .build();
+                diaryListRepository.save(addDiaryList);
+
+                diaryContentRepository.save(DiaryContent.builder()
+                        .diaryListId(addDiaryList.getId())
+                        .userId(userId)
+                        .tripDate(d)
                         .build());
             }
 
