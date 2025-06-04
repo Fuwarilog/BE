@@ -305,4 +305,46 @@ public class LocationService {
         visitedRouteRepository.save(routeDoc);
         return new VisitedRouteDocumentResponse.RouteDTO(distanceText, durationText, dto.getOrigin(), dto.getDestination());
     }
+
+    public LocationResponse.LocationDetailDTO getLocationDetail(String placeId) {
+
+        URI uri = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/place/details/json")
+                .queryParam("place_id", placeId)
+                .queryParam("fields", "name,formatted_phone_number,rating,opening_hours,formatted_address,geometry")
+                .queryParam("key", apiKey)
+                .build()
+                .toUri();
+
+        log.info("Google Place Details API URI: {}", uri);
+
+        try {
+            Map<String, Object> response = restTemplate.getForObject(uri, Map.class);
+            if (response == null || !"OK".equals(response.get("status"))) {
+                throw new RuntimeException("Google Place Details API 호출 실패");
+            }
+
+            Map<String, Object> result = (Map<String, Object>) response.get("result");
+
+            String name = (String) result.get("name");
+            String phone = (String) result.get("formatted_phone_number");
+            String address = (String) result.get("formatted_address");
+            Double rating = result.get("rating") != null ? ((Number) result.get("rating")).doubleValue() : null;
+
+            Map<String, Object> geometry = (Map<String, Object>) result.get("geometry");
+            Map<String, Object> location = (Map<String, Object>) geometry.get("location");
+            double latitude = ((Number) location.get("lat")).doubleValue();
+            double longitude = ((Number) location.get("lng")).doubleValue();
+
+            List<String> weekdayText = null;
+            if (result.containsKey("opening_hours")) {
+                Map<String, Object> openingHours = (Map<String, Object>) result.get("opening_hours");
+                weekdayText = (List<String>) openingHours.get("weekday_text");
+            }
+
+            return new LocationResponse.LocationDetailDTO(name, phone, address, rating, latitude, longitude, weekdayText);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
+        }
+    }
 }

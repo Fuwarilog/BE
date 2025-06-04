@@ -2,10 +2,9 @@ package com.skuniv.fuwarilog.dto.Location;
 
 import com.skuniv.fuwarilog.domain.Location;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.util.List;
 
 public class LocationResponse {
     public record CurrentLocationDTO (String placeName, double latitude, double longitude) {};
@@ -15,7 +14,7 @@ public class LocationResponse {
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
-    @Schema(title = "RES 1. 위치 북마크 정보 반환 DTO")
+    @Schema(title = "RES 1: 위치 북마크 정보 반환 DTO")
     public static class LocationInfoDTO {
         @Schema(description = "장소 고유 번호", example = "1")
         private long id;
@@ -41,6 +40,31 @@ public class LocationResponse {
                     location.getLongitude(),
                     location.getAddress(),
                     location.getPlaceUrl());
+        }
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @Schema(title = "RES 2: 장소 상세 정보 조회 DTO")
+    public static class LocationDetailDTO {
+        private String name;
+        private String phone;
+        private String address;
+        private Double rating;
+        private double lat;
+        private double lng;
+        private List<String> openingHours;
+
+        public LocationDetailDTO(String name, String phone,  String address, Double rating, double lat, double lng, List<String> openingHours) {
+            this.name = name;
+            this.phone = phone;
+            this.address = address;
+            this.rating = rating;
+            this.lat = lat;
+            this.lng = lng;
+            this.openingHours = openingHours;
         }
     }
 }

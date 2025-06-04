@@ -3,6 +3,8 @@ package com.skuniv.fuwarilog.dto.Location;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.util.List;
+
 public class LocationRequest {
 
     @Builder
