@@ -26,7 +26,6 @@ import java.util.List;
 public class LocationController {
 
     private final LocationService locationService;
-    private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
 
     @PostMapping("/location")
@@ -44,18 +43,34 @@ public class LocationController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/search")
-    @Operation(summary = "장소 검색 API", description = "검색어 기반 장소 리스트 반환")
-    public ResponseEntity<List<LocationResponse.PlaceDTO>> searchPlace(
+
+    @GetMapping("/place-detail")
+    @Operation(summary = "장소 상세 정보 조회 API", description = "place_id 기반 장소 정보 조회 및 반환")
+    public ResponseEntity<LocationResponse.LocationDetailDTO> getLocationDetail(
             Authentication authentication,
-            @RequestParam String keyword) {
+            @RequestParam String placeId) {
 
         String email = (String) authentication.getName();
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
-        List<LocationResponse.PlaceDTO> result = locationService.searchPlaces(keyword);
+        LocationResponse.LocationDetailDTO result = locationService.getLocationDetail(placeId);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/search")
+    @Operation(summary = "장소 검색 API", description = "검색어 기반 장소 리스트 반환")
+    public ResponseEntity<List<LocationResponse.PlaceDTO>> searchPlace(
+            Authentication authentication,
+            @RequestBody LocationRequest.LocationSearchDTO dto) {
+
+        String email = (String) authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        List<LocationResponse.PlaceDTO> result = locationService.searchPlaces(dto);
         return ResponseEntity.ok(result);
     }
 

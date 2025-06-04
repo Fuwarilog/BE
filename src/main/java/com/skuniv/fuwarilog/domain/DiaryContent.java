@@ -32,4 +32,7 @@ public class DiaryContent {
 
     @Field("image_urls")
     private List<String> imageUrls;
+
+    @Field("tags")
+    private List<LocationTag> tags;
 }

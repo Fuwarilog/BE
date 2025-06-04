@@ -14,13 +14,13 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(name= "currency_prediction")
 public class CurrencyPrediction extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="prediction_id")
     private long id;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="trip_id")

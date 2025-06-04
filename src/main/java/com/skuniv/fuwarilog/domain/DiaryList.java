@@ -5,14 +5,15 @@ import lombok.*;
 
 import java.time.LocalDate;
 
-
 @Builder
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(name= "diary_list")
 public class DiaryList extends BaseEntity{
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="diarylist_id")
@@ -25,6 +26,6 @@ public class DiaryList extends BaseEntity{
     @Column(name = "date")
     private LocalDate date;
 
-    @Column(name = "is_public", columnDefinition = "boolean default 'False'")
+    @Column(name = "is_public")
     private Boolean isPublic;
 }
