@@ -43,7 +43,7 @@ public class LocationController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/search")
+    @PostMapping("/search")
     @Operation(summary = "장소 검색 API", description = "검색어 기반 장소 리스트 반환")
     public ResponseEntity<List<LocationResponse.PlaceDTO>> searchPlace(
             Authentication authentication,

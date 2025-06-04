@@ -53,10 +53,10 @@ public class LocationRequest {
         private String keyword;
 
         @Schema(description = "위도", example = "37.5808")
-        double latitude;
+        private Double latitude;
 
         @Schema(description = "경도", example = "127.0238")
-        double longitude;
+        private Double longitude;
 
         @Schema(description = "반경", example = "3000")
         private Integer radius;

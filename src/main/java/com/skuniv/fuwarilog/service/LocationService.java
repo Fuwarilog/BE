@@ -80,7 +80,7 @@ public class LocationService {
 
         double currentLat = dto.getLatitude();
         double currentLng = dto.getLongitude();
-        int radius = dto.getRadius();
+        int radius = dto.getRadius() != null ? dto.getRadius() : 3000;
 
         URI uri = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/place/textsearch/json")
                 .queryParam("query", dto.getKeyword())
@@ -120,7 +120,7 @@ public class LocationService {
                     double lng = ((Number) location.get("lng")).doubleValue();
                     String placeId = (String) place.get("place_id");
 
-                    places.add(new LocationResponse.PlaceDTO(name, lat, lng, placeId));
+                    places.add(new LocationResponse.PlaceDTO(name, address, lat, lng, placeId));
                 }
             }
             return places;
@@ -139,12 +139,16 @@ public class LocationService {
             throw new IllegalArgumentException("Keyword is null or empty");
         }
 
-        if (dto.getLongitude()) {
+        if (dto.getLongitude() == null || dto.getLatitude() == null) {
             throw new IllegalArgumentException("Location is null or empty");
         }
 
-        if (dto.getLongitude() < -90 || dto.getLongitude() > 90) {
-            throw new IllegalArgumentException("Location is invalid range");
+        if (dto.getLatitude() < -90 || dto.getLatitude() > 90) {
+            throw new IllegalArgumentException("Latitude is invalid range(-90 ~ 90)");
+        }
+
+        if (dto.getLongitude() < -180 || dto.getLongitude() > 180) {
+            throw new IllegalArgumentException("Longitude is invalid range(-180 ~ 180)");
         }
 
         if (dto.getRadius() != null && (dto.getRadius() < 100 || dto.getRadius() > 50000)) {
