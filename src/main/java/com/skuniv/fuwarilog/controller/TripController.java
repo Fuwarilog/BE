@@ -116,7 +116,7 @@ public class TripController {
         }
     }
 
-    @PostMapping("/event/{id}")
+    @PostMapping("/event/{tripId}")
     @Operation(summary = "여행일정 수정 API", description = " 여행ID 입력 시 해당 일정 수정 가능")
     public ResponseEntity<TripResponse.TripInfoDTO> editEvent(
             Authentication authentication,
@@ -131,11 +131,11 @@ public class TripController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/event/{id}")
+    @DeleteMapping("/event/{tripId}")
     @Operation(summary = "일정 삭제 API", description = "Trip id 입력 시 해당하는 여행일정 삭제")
     public ResponseEntity<Void> deleteTrip(
             Authentication authentication,
-            @PathVariable Long id) {
+            @PathVariable Long tripId) {
 
         String email = (String) authentication.getName();
 
@@ -143,7 +143,7 @@ public class TripController {
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
         try {
-            tripService.deleteEvent(email, id);
+            tripService.deleteEvent(email, tripId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.notFound().build();

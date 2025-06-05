@@ -11,4 +11,6 @@ public interface DiaryContentRepository extends MongoRepository<DiaryContent, St
     Optional<DiaryContent> findByUserIdAndDiaryListId(Long userId, Long diaryListId);
 
     List<DiaryContent> findByUserIdAndTripDate(Long userId, LocalDate now);
+
+    void deleteByDiaryListIdAndTripDate(long id, LocalDate date);
 }

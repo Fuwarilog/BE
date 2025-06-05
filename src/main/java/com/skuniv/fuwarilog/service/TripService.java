@@ -264,6 +264,13 @@ public class TripService {
                     .map(DiaryList::getDate)
                     .collect(Collectors.toSet());
 
+            Set<DiaryList> existingList = existingLists.stream()
+                    .map(diaryList -> DiaryList.builder()
+                            .id(diaryList.getId())
+                            .date(diaryList.getDate())
+                            .build())
+                    .collect(Collectors.toSet());
+
             Set<LocalDate> newDates = new HashSet<>();
             for (LocalDate d = infoDTO.getStartDate(); !d.isAfter(infoDTO.getEndDate()); d = d.plusDays(1)) {
                 newDates.add(d);
@@ -274,6 +281,9 @@ public class TripService {
 
             Set<LocalDate> toRemove = new HashSet<>(existingDates);
             toRemove.removeAll(newDates);
+
+            Set<DiaryList> toRemoveList = new HashSet<>(existingList);
+            toRemoveList.removeAll(newDates);
 
             // 추가된 일정의 다이어리 생성
             for(LocalDate d : toAdd) {
@@ -293,6 +303,10 @@ public class TripService {
             // 삭제
             for (LocalDate d : toRemove) {
                 diaryListRepository.deleteByDiaryAndDate(diary, d);
+            }
+
+            for (DiaryList i : toRemoveList) {
+                diaryContentRepository.deleteByDiaryListIdAndTripDate(i.getId(), i.getDate());
             }
         }
 
