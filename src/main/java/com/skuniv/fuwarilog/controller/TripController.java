@@ -6,9 +6,7 @@ import com.skuniv.fuwarilog.domain.User;
 import com.skuniv.fuwarilog.dto.Trip.TripRequest;
 import com.skuniv.fuwarilog.dto.Trip.TripResponse;
 import com.skuniv.fuwarilog.repository.UserRepository;
-import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.TripService;
-import com.skuniv.fuwarilog.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Tag(name = "Calendar(Trip) API", description = "여행일정 관련(캘린더) 조회, 수정, 삭제")
@@ -27,7 +24,6 @@ import java.util.List;
 public class TripController {
 
     private final TripService tripService;
-    private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
 
     @GetMapping("/event/month")

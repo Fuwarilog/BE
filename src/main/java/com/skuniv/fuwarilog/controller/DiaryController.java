@@ -27,7 +27,6 @@ import java.util.List;
 @Tag(name = "Diary API", description = "다이어리 관련 조회, 작성, 삭제 + 지도맵의 태그 관리")
 public class DiaryController {
     private final DiaryService diaryService;
-    private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
 
     @GetMapping("/")
