@@ -245,13 +245,19 @@ public class LocationService {
         DiaryContent content = contentOpt.stream().findFirst()
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
 
-        String currentContent = content.getContent();
         DiaryList list = diaryListRepository.findById(content.getDiaryListId())
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
         String tagToRemove = "#" + location.getPlaceName().replaceAll("\\s+", "");
+
+        String currentContent = Optional.ofNullable(content.getContent()).orElse("");
         String updatedContent = currentContent.replace(tagToRemove, "").replaceAll("(?m)^\\s*$[\r\n]+", ""); // 빈 줄 정리
         content.setContent(updatedContent.trim());
+
+        if (content.getTags() != null) {
+            content.getTags().removeIf(tag -> tag.getTagText().equals(tagToRemove));
+        }
+
         list.setUpdatedAt(LocalDateTime.now());
         diaryContentRepository.save(content);
     }
