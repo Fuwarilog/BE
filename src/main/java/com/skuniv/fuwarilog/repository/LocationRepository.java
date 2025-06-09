@@ -10,6 +10,6 @@ import java.util.Optional;
 
 public interface LocationRepository extends JpaRepository<Location,String> {
     Location findByIdAndUserId(Long locationId, Long userId);
-    List<Location> findByUserIdAndBookmarkedAtAndBookmarkedTrue(Long userId, LocalDate bookmarkedAt);
 
+    Location findByUserIdAndPlaceId(Long attr0, String placeId);
 }

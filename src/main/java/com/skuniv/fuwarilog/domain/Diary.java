@@ -14,6 +14,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(name= "diary")
 public class Diary extends BaseEntity {
 
     @Id
@@ -24,6 +25,9 @@ public class Diary extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="trip_id")
     private Trip trip;
+
+    @Column(name = "google_event_id")
+    private String googleEventId;
 
     @Column(name="title", columnDefinition = "VARCHAR(256)")
     private String title;

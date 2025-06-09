@@ -32,8 +32,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = resolveTokenFromCookie(request);
 
-        //String header = request.getHeader("Authorization");
-
         if (token != null && jwtTokenProvider.validateToken(token)) {
             String email = jwtTokenProvider.getUserEmail(token);
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(email, null, null);

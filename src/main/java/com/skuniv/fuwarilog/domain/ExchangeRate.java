@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 @AllArgsConstructor
+@Table(name= "exchange_rate")
 public class ExchangeRate extends BaseEntity {
 
     @Id

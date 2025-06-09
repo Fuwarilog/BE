@@ -2,23 +2,19 @@ package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.domain.Diary;
-import com.skuniv.fuwarilog.domain.DiaryList;
-import com.skuniv.fuwarilog.domain.Trip;
-import com.skuniv.fuwarilog.domain.User;
+import com.skuniv.fuwarilog.domain.*;
 import com.skuniv.fuwarilog.dto.Trip.TripRequest;
 import com.skuniv.fuwarilog.dto.Trip.TripResponse;
-import com.skuniv.fuwarilog.repository.DiaryListRepository;
-import com.skuniv.fuwarilog.repository.DiaryRepository;
-import com.skuniv.fuwarilog.repository.TripRepository;
-import com.skuniv.fuwarilog.repository.UserRepository;
+import com.skuniv.fuwarilog.repository.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,6 +30,7 @@ public class TripService {
     private final UserRepository userRepository;
     private final DiaryRepository diaryRepository;
     private final DiaryListRepository diaryListRepository;
+    private final DiaryContentRepository diaryContentRepository;
 
     /**
      * @implSpec 구글켈린더에 월별 일정 조회
@@ -139,9 +136,10 @@ public class TripService {
                 .build();
         tripRepository.save(newTrip);
 
-        // ** 여행 일정 생성 시 자동으로 다이어리 생성되게끔 만들어야함
+        // 여행 일정 생성 시 자동으로 다이어리 생성되게끔 만들어야함
         Diary newDiary = Diary.builder()
                 .trip(newTrip)
+                .googleEventId(eventId)
                 .title(title)
                 .startDate(LocalDate.parse(startDate))
                 .endDate(LocalDate.parse(endDate))
@@ -152,9 +150,18 @@ public class TripService {
         for (LocalDate d=LocalDate.parse(startDate); d.compareTo(LocalDate.parse(endDate)) <= 0; d = d.plusDays(1)) {
             DiaryList newDiaries = DiaryList.builder()
                     .diary(newDiary)
+                    .googleEventId(eventId)
                     .date(d)
                     .build();
             diaryListRepository.save(newDiaries);
+
+            DiaryContent newDiaryContent = DiaryContent.builder()
+                    .userId(user.getId())
+                    .diaryListId(newDiaries.getId())
+                    .googleEventId(eventId)
+                    .tripDate(d)
+                    .build();
+            diaryContentRepository.save(newDiaryContent);
         }
 
         return TripResponse.TripInfoDTO.builder()
@@ -178,6 +185,7 @@ public class TripService {
 
         googleCalendarService.deleteEvent(userEmail, trip.getGoogleEventId());
         tripRepository.delete(trip);
+        diaryContentRepository.deleteByGoogleEventId(trip.getGoogleEventId());
     }
 
     /**
@@ -222,6 +230,7 @@ public class TripService {
      * @param infoDTO 여행 데이터 DTO
      * @return TripResponse.TripInfoDTO 수정된 일정값 반환
      * */
+    @Transactional
     public TripResponse.TripInfoDTO editEvent(Long userId, Long tripId, TripRequest.TripInfoDTO infoDTO) {
         // 1. 사용자 존재 확인
         User user =  userRepository.findById(userId)
@@ -262,9 +271,21 @@ public class TripService {
                     .map(DiaryList::getDate)
                     .collect(Collectors.toSet());
 
+            Set<DiaryList> existingList = existingLists.stream()
+                    .map(diaryList -> DiaryList.builder()
+                            .id(diaryList.getId())
+                            .date(diaryList.getDate())
+                            .build())
+                    .collect(Collectors.toSet());
+
             Set<LocalDate> newDates = new HashSet<>();
             for (LocalDate d = infoDTO.getStartDate(); !d.isAfter(infoDTO.getEndDate()); d = d.plusDays(1)) {
                 newDates.add(d);
+            }
+
+            Set<LocalDate> newContentDates = new HashSet<>();
+            for (LocalDate d = infoDTO.getStartDate().minusDays(1); !d.isAfter(infoDTO.getEndDate().minusDays(1)); d = d.plusDays(1)) {
+                newContentDates.add(d);
             }
 
             Set<LocalDate> toAdd = new HashSet<>(newDates);
@@ -273,17 +294,36 @@ public class TripService {
             Set<LocalDate> toRemove = new HashSet<>(existingDates);
             toRemove.removeAll(newDates);
 
+            Set<DiaryList> toRemoveList = existingList.stream()
+                            .filter(list -> !newContentDates.contains(list.getDate()))
+                                    .collect(Collectors.toSet());
+
+            log.info(toRemoveList.iterator().toString());
+
             // 추가된 일정의 다이어리 생성
             for(LocalDate d : toAdd) {
-                diaryListRepository.save(DiaryList.builder()
+                DiaryList addDiaryList = DiaryList.builder()
                         .diary(diary)
+                        .googleEventId(diary.getGoogleEventId())
                         .date(d)
+                        .build();
+                diaryListRepository.save(addDiaryList);
+
+                diaryContentRepository.save(DiaryContent.builder()
+                        .diaryListId(addDiaryList.getId())
+                        .userId(userId)
+                        .googleEventId(addDiaryList.getGoogleEventId())
+                        .tripDate(d)
                         .build());
             }
 
             // 삭제
             for (LocalDate d : toRemove) {
                 diaryListRepository.deleteByDiaryAndDate(diary, d);
+            }
+
+            for (DiaryList i : toRemoveList) {
+                diaryContentRepository.deleteByDiaryListIdAndTripDate(i.getId(), i.getDate());
             }
         }
 

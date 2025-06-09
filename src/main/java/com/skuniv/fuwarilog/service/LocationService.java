@@ -1,6 +1,7 @@
 package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
+import com.skuniv.fuwarilog.config.exception.ErrorResponse;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.*;
 import com.skuniv.fuwarilog.dto.Location.LocationRequest;
@@ -69,33 +70,90 @@ public class LocationService {
 
     /**
      * @implSpec 검색어에 따른 장소 리스트 반환
-     * @param keyword 검색 단어
+     * @param dto 검색 단어
      * @return places 장소명, 주소, 위치
      */
-    public List<LocationResponse.PlaceDTO> searchPlaces(String keyword) {
+    public List<LocationResponse.PlaceDTO> searchPlaces(LocationRequest.LocationSearchDTO dto) {
+
+        // 1. 위치 정보 검증
+        validatedLocationRequest(dto);
+
+        double currentLat = dto.getLatitude();
+        double currentLng = dto.getLongitude();
+        int radius = dto.getRadius() != null ? dto.getRadius() : 3000;
+
         URI uri = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/place/textsearch/json")
-                .queryParam("query", keyword)
+                .queryParam("query", dto.getKeyword())
+                .queryParam("locationbias", "circle:" + radius + "@" +  currentLat + "," + currentLng)
+                .queryParam("fields", "name,formatted_address,geometry,rating,price_level")
                 .queryParam("key", apiKey)
                 .build()
                 .toUri();
 
         log.info(uri.toString());
 
-        Map<String, Object> response = restTemplate.getForObject(uri, Map.class);
-        List<Map<String, Object>> results = (List<Map<String, Object>>) response.get("results");
-
-        List<LocationResponse.PlaceDTO> places = new ArrayList<>();
-        if(results != null) {
-            for(Map<String, Object> place : results) {
-                String name = (String) place.get("name");
-                Map<String, Object> geometry = (Map<String, Object>) place.get("geometry");
-                Map<String, Object> location = (Map<String, Object>) geometry.get("location");
-                double lat = ((Number) location.get("lat")).doubleValue();
-                double lng = ((Number) location.get("lng")).doubleValue();
-                places.add(new LocationResponse.PlaceDTO(name, lat, lng));
+        try {
+            Map<String, Object> response = restTemplate.getForObject(uri, Map.class);
+            if (response == null) {
+                log.error("Google Places API returned null");
+                return new ArrayList<>();
             }
+
+            String status = (String) response.get("status");
+            if (!"OK".equals(status) && !"ZERO_RESULTS".equals(status)) {
+                log.error("Google Places API error: {}", status);
+                throw new RuntimeException("Google Places API returned status " + status);
+            }
+
+            List<Map<String, Object>> results = (List<Map<String, Object>>) response.get("results");
+            List<LocationResponse.PlaceDTO> places = new ArrayList<>();
+
+            if (results != null) {
+                for (Map<String, Object> place : results) {
+                    String name = (String) place.get("name");
+                    String address = (String) place.get("formatted_address");
+
+                    Map<String, Object> geometry = (Map<String, Object>) place.get("geometry");
+                    Map<String, Object> location = (Map<String, Object>) geometry.get("location");
+
+                    double lat = ((Number) location.get("lat")).doubleValue();
+                    double lng = ((Number) location.get("lng")).doubleValue();
+                    String placeId = (String) place.get("place_id");
+
+                    places.add(new LocationResponse.PlaceDTO(name, address, lat, lng, placeId));
+                }
+            }
+            return places;
+        } catch (Exception e) {
+            log.error("Exception: ", e);
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
-        return places;
+    }
+
+    private void validatedLocationRequest(LocationRequest.LocationSearchDTO dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("DTO is null");
+        }
+
+        if (dto.getKeyword() == null || dto.getKeyword().trim().isEmpty()) {
+            throw new IllegalArgumentException("Keyword is null or empty");
+        }
+
+        if (dto.getLongitude() == null || dto.getLatitude() == null) {
+            throw new IllegalArgumentException("Location is null or empty");
+        }
+
+        if (dto.getLatitude() < -90 || dto.getLatitude() > 90) {
+            throw new IllegalArgumentException("Latitude is invalid range(-90 ~ 90)");
+        }
+
+        if (dto.getLongitude() < -180 || dto.getLongitude() > 180) {
+            throw new IllegalArgumentException("Longitude is invalid range(-180 ~ 180)");
+        }
+
+        if (dto.getRadius() != null && (dto.getRadius() < 100 || dto.getRadius() > 50000)) {
+            throw new IllegalArgumentException("Location is out of range");
+        }
     }
 
     /**
@@ -104,40 +162,75 @@ public class LocationService {
      * @param dto 북마크 요청 DTO
      */
     public LocationResponse.LocationInfoDTO saveBookmark(Long userId, LocationRequest.LocationBookmarkReqDTO dto) {
-        // 1. 사용자 확인
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+        try {
+            // 1. 사용자 확인
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
-        // 2. 북마크 장소 추가
-        Location location = Location.builder()
-                .user(user)
-                .placeName(dto.getName())
-                .latitude(dto.getLatitude())
-                .longitude(dto.getLongitude())
-                .bookmarked(true)
-                .bookmarkedAt(LocalDateTime.now())
-                .build();
-        locationRepository.save(location);
+            Location location = locationRepository.findByUserIdAndPlaceId(userId, dto.getPlaceId());
 
-        // 3. 다이어리 내용에 태그 삽입
-        Optional<DiaryContent> contentOpt = diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
+            if (location == null) {
 
-        if (contentOpt.isPresent()) {
-            DiaryContent content = contentOpt.get();
-            String currentContent = content.getContent();
+                // 2. 북마크 장소 추가
+                location = Location.builder()
+                        .user(user)
+                        .placeId(dto.getPlaceId())
+                        .placeName(dto.getName())
+                        .latitude(dto.getLatitude())
+                        .longitude(dto.getLongitude())
+                        .bookmarked(true)
+                        .bookmarkedAt(LocalDateTime.now())
+                        .build();
+                locationRepository.save(location);
+            } else {
+                throw new BadRequestException(ErrorResponseStatus.ALREADY_EXIST_LOCATION);
+            }
+
+            // 3. 다이어리 내용에 태그 삽입
+            List<DiaryContent> contentOpt = diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
+            DiaryContent content = contentOpt.stream().findFirst()
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
+
             DiaryList list = diaryListRepository.findById(content.getDiaryListId())
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
             // 이미 존재하는 태그인지 확인
-            String tagToAdd = "#" + location.getPlaceName().replaceAll("\\s+", "");
-            if (!currentContent.contains(tagToAdd)) {
-                String updatedContent = currentContent + "\n" + tagToAdd;
-                content.setContent(updatedContent);
+            String tagText = "#" + location.getPlaceName().replaceAll("\\s+", "");
+            boolean tagExists = content.getTags() != null && content.getTags().stream()
+                    .anyMatch(tag -> tag.getTagText().equals(tagText));
+
+            if (!tagExists) {
+                LocationTag tag = LocationTag.builder()
+                        .placeName(location.getPlaceName())
+                        .placeUrl(location.getPlaceUrl())
+                        .address(location.getAddress())
+                        .latitude(location.getLatitude())
+                        .longitude(location.getLongitude())
+                        .tagText(tagText)
+                        .build();
+
+                if (content.getTags() == null) {
+                    content.setTags(new ArrayList<>());
+                }
+                content.getTags().add(tag);
+
+                String currentContent = Optional.ofNullable(content.getContent()).orElse("");
+                log.info(currentContent);
+                if (!currentContent.contains(tagText)) {
+                    String updatedContent = tagText + "\n" + currentContent;
+                    log.info(updatedContent);
+                    content.setContent(updatedContent);
+                }
                 list.setUpdatedAt(LocalDateTime.now()); // diarycontent가 아닌 DiaryList의 uodatedAt을 업데이트 해야한다.
                 diaryContentRepository.save(content);
             }
+
+            return LocationResponse.LocationInfoDTO.from(location);
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
         }
-        return LocationResponse.LocationInfoDTO.from(location);
     }
 
     public void deleteBookmark(Long userId, Long locationId) {
@@ -148,21 +241,25 @@ public class LocationService {
         locationRepository.save(location);
 
         // 다이어리에서 태그 제거
-        Optional<DiaryContent> contentOpt =
-                diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
+        List<DiaryContent> contentOpt = diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
+        DiaryContent content = contentOpt.stream().findFirst()
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
 
-        if (contentOpt.isPresent()) {
-            DiaryContent content = contentOpt.get();
-            String currentContent = content.getContent();
-            DiaryList list = diaryListRepository.findById(content.getDiaryListId())
-                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+        DiaryList list = diaryListRepository.findById(content.getDiaryListId())
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
-            String tagToRemove = "#" + location.getPlaceName().replaceAll("\\s+", "");
-            String updatedContent = currentContent.replace(tagToRemove, "").replaceAll("(?m)^\\s*$[\r\n]+", ""); // 빈 줄 정리
-            content.setContent(updatedContent.trim());
-            list.setUpdatedAt(LocalDateTime.now());
-            diaryContentRepository.save(content);
+        String tagToRemove = "#" + location.getPlaceName().replaceAll("\\s+", "");
+
+        String currentContent = Optional.ofNullable(content.getContent()).orElse("");
+        String updatedContent = currentContent.replace(tagToRemove, "").replaceAll("(?m)^\\s*$[\r\n]+", ""); // 빈 줄 정리
+        content.setContent(updatedContent.trim());
+
+        if (content.getTags() != null) {
+            content.getTags().removeIf(tag -> tag.getTagText().equals(tagToRemove));
         }
+
+        list.setUpdatedAt(LocalDateTime.now());
+        diaryContentRepository.save(content);
     }
 
     /**
@@ -176,7 +273,11 @@ public class LocationService {
                 .queryParam("origin", dto.getOrigin())
                 .queryParam("destination", dto.getDestination())
                 .queryParam("mode", "transit")
+                .queryParam("transit_mode", "subway|bus")
+                .queryParam("departure_time", "now")
+                .queryParam("traffic_model", "best_guess")
                 .queryParam("key", apiKey)
+                .build()
                 .toUriString();
 
         Map<String, Object> response = restTemplate.getForObject(url, Map.class);
@@ -209,5 +310,47 @@ public class LocationService {
 
         visitedRouteRepository.save(routeDoc);
         return new VisitedRouteDocumentResponse.RouteDTO(distanceText, durationText, dto.getOrigin(), dto.getDestination());
+    }
+
+    public LocationResponse.LocationDetailDTO getLocationDetail(String placeId) {
+
+        URI uri = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/place/details/json")
+                .queryParam("place_id", placeId)
+                .queryParam("fields", "name,formatted_phone_number,rating,opening_hours,formatted_address,geometry")
+                .queryParam("key", apiKey)
+                .build()
+                .toUri();
+
+        log.info("Google Place Details API URI: {}", uri);
+
+        try {
+            Map<String, Object> response = restTemplate.getForObject(uri, Map.class);
+            if (response == null || !"OK".equals(response.get("status"))) {
+                throw new RuntimeException("Google Place Details API 호출 실패");
+            }
+
+            Map<String, Object> result = (Map<String, Object>) response.get("result");
+
+            String name = (String) result.get("name");
+            String phone = (String) result.get("formatted_phone_number");
+            String address = (String) result.get("formatted_address");
+            Double rating = result.get("rating") != null ? ((Number) result.get("rating")).doubleValue() : null;
+
+            Map<String, Object> geometry = (Map<String, Object>) result.get("geometry");
+            Map<String, Object> location = (Map<String, Object>) geometry.get("location");
+            double latitude = ((Number) location.get("lat")).doubleValue();
+            double longitude = ((Number) location.get("lng")).doubleValue();
+
+            List<String> weekdayText = null;
+            if (result.containsKey("opening_hours")) {
+                Map<String, Object> openingHours = (Map<String, Object>) result.get("opening_hours");
+                weekdayText = (List<String>) openingHours.get("weekday_text");
+            }
+
+            return new LocationResponse.LocationDetailDTO(name, phone, address, rating, latitude, longitude, weekdayText);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
+        }
     }
 }

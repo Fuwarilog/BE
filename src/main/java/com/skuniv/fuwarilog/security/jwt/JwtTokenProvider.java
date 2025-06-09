@@ -46,7 +46,7 @@ public class JwtTokenProvider {
 
     // accessToken 생성
     public String createAccessToken(String email, List<String> roles) {
-        return createToken(email, roles, 1000L * 60 * 60 * 24);
+        return createToken(email, roles, 1000L * 60 * 60 * 24 * 7);  // 개발 기간중 시간 늘림 -> 추후 변경 예정
     }
 
     // refreshToken 생성

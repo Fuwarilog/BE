@@ -9,6 +9,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(name= "post_bookmark")
 public class PostBookmark extends BaseEntity{
 
     @Id
