@@ -22,7 +22,7 @@ spring:
       uri: mongodb+srv://${MONGO_USER}:${MONGO_PW}@fuwarilog.ttscmet.mongodb.net/${MONGO_DB}?retryWrites=true&w=majority&appName=fuwarilog
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: false
     properties:
       hibernate:

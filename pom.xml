@@ -30,6 +30,14 @@
         <java.version>21</java.version>
     </properties>
     <dependencies>
+
+        <!-- OpenFeign : API 연동 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+            <version>4.2.1</version>
+        </dependency>
+
         <!-- Apache HttpClient -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
@@ -59,11 +67,6 @@
             <artifactId>google-api-client</artifactId>
             <version>2.7.2</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.google.maps</groupId>-->
-<!--            <artifactId>google-maps-services</artifactId>-->
-<!--            <version>2.2.0</version>-->
-<!--        </dependency>-->
 
         <!-- JWT -->
         <dependency>
