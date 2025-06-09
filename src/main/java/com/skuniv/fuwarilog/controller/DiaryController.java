@@ -8,7 +8,6 @@ import com.skuniv.fuwarilog.dto.DiaryContent.DiaryContentRequest;
 import com.skuniv.fuwarilog.dto.DiaryList.DiaryListResponse;
 import com.skuniv.fuwarilog.dto.Trip.TripResponse;
 import com.skuniv.fuwarilog.repository.UserRepository;
-import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

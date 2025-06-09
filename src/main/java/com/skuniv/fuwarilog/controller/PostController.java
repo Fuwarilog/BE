@@ -12,7 +12,6 @@ import com.skuniv.fuwarilog.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +28,7 @@ public class PostController {
     private final PostService postService;
     private final UserRepository userRepository;
 
-    @GetMapping("/")
+    @GetMapping("")
     @Operation(summary = "포스트 조회 API", description = "공개 처리된 게시글 최신순으로 반환")
     public ResponseEntity<List<PostResponse.PostListDTO>> getPosts (
             Authentication authentication) {
