@@ -26,6 +26,9 @@ public class Diary extends BaseEntity {
     @JoinColumn(name="trip_id")
     private Trip trip;
 
+    @Column(name = "google_event_id")
+    private String googleEventId;
+
     @Column(name="title", columnDefinition = "VARCHAR(256)")
     private String title;
 

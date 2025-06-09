@@ -6,9 +6,7 @@ import com.skuniv.fuwarilog.domain.User;
 import com.skuniv.fuwarilog.dto.Trip.TripRequest;
 import com.skuniv.fuwarilog.dto.Trip.TripResponse;
 import com.skuniv.fuwarilog.repository.UserRepository;
-import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.TripService;
-import com.skuniv.fuwarilog.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Tag(name = "Calendar(Trip) API", description = "여행일정 관련(캘린더) 조회, 수정, 삭제")
@@ -27,7 +24,6 @@ import java.util.List;
 public class TripController {
 
     private final TripService tripService;
-    private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
 
     @GetMapping("/event/month")
@@ -116,7 +112,7 @@ public class TripController {
         }
     }
 
-    @PostMapping("/event/{id}")
+    @PostMapping("/event/{tripId}")
     @Operation(summary = "여행일정 수정 API", description = " 여행ID 입력 시 해당 일정 수정 가능")
     public ResponseEntity<TripResponse.TripInfoDTO> editEvent(
             Authentication authentication,
@@ -131,11 +127,11 @@ public class TripController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/event/{id}")
+    @DeleteMapping("/event/{tripId}")
     @Operation(summary = "일정 삭제 API", description = "Trip id 입력 시 해당하는 여행일정 삭제")
     public ResponseEntity<Void> deleteTrip(
             Authentication authentication,
-            @PathVariable Long id) {
+            @PathVariable Long tripId) {
 
         String email = (String) authentication.getName();
 
@@ -143,7 +139,7 @@ public class TripController {
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
         try {
-            tripService.deleteEvent(email, id);
+            tripService.deleteEvent(email, tripId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.notFound().build();

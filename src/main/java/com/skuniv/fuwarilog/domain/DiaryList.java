@@ -23,6 +23,9 @@ public class DiaryList extends BaseEntity{
     @JoinColumn(name = "diary_id")
     private Diary diary;
 
+    @Column(name = "google_event_id")
+    private String googleEventId;
+
     @Column(name = "date")
     private LocalDate date;
 
