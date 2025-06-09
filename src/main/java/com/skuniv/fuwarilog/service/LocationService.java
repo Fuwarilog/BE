@@ -1,7 +1,6 @@
 package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
-import com.skuniv.fuwarilog.config.exception.ErrorResponse;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.*;
 import com.skuniv.fuwarilog.dto.Location.LocationRequest;

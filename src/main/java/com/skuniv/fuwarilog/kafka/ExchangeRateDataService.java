@@ -12,19 +12,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -42,16 +37,17 @@ public class ExchangeRateDataService {
     /**
      * @implSpec 실시간 환율 데이터 연동 및 전달
      */
-    @Scheduled(cron = "0/5 * * * * *")
+    @Scheduled(cron = "0 0/1 * * * *")
     public void fetchAndSendExchangeRates() {
         // 환율 실시간 API 연동
         try{
             log.info("[1] Start fetchAndSendExchangeRates");
 
-            for (LocalDate date = LocalDate.parse("2024-12-31", DateTimeFormatter.ofPattern("yyyy-MM-dd")); !date.isEqual(LocalDate.now()); date = date.plusDays(1)) {
+            for (LocalDate date = LocalDate.parse("2024-12-31"); !date.isEqual(LocalDate.now()); date = date.plusDays(1)) {
                 log.info(date.toString());
 
                 String formattedDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                log.info(formattedDate);
 
                 String uri = UriComponentsBuilder.fromUriString("https://www.koreaexim.go.kr/site/program/financial/exchangeJSON")
                         .queryParam("authkey", apiKey)
@@ -62,48 +58,53 @@ public class ExchangeRateDataService {
                 log.info("[2] Fetching exchange rates from Kafka ...");
                 log.info(uri);
 
-                HttpHeaders headers = new HttpHeaders();
-                headers.set("User-Agent", "Mozilla/5.0");
-                HttpEntity<String> entity = new HttpEntity<>(headers);
-
-                ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, entity, String.class);
+                ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
+                log.info("restTemplate Body: {}", response.getBody());
 
                 List<String> currency = Arrays.asList("USD", "JPY(100)", "CNH");
                 Map<String, String> CurrencyToCountry = new HashMap<>() {{
                     put("USD", "미국");
                     put("JPY", "일본");
-                    put("CHN", "중국");
+                    put("CNH", "중국");
                 }};
 
-                if (response.getStatusCode() == HttpStatus.OK) {
-                    ObjectMapper mapper = new ObjectMapper();
-                    JsonNode root = mapper.readTree(response.getBody());
+                // (1) null이 아닌 경우 데이터 받음
+                if (!Objects.requireNonNull(response.getBody()).isEmpty()) {
+                    if (response.getStatusCode() == HttpStatus.OK) {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode root = mapper.readTree(response.getBody());
 
-                    for (JsonNode node : root) {
-                        if (!node.path("result").asText().equals("1")) continue;
+                        for (JsonNode node : root) {
+                            if (!node.path("result").asText().equals("1")) continue;
 
-                        if (currency.contains(node.path("cur_unit").asText())) {
+                            if (currency.contains(node.path("cur_unit").asText())) {
+                                ExchangeRateRequest.ExchangeRateDTO dto = new ExchangeRateRequest.ExchangeRateDTO();
 
-                            ExchangeRateRequest.ExchangeRateDTO dto = new ExchangeRateRequest.ExchangeRateDTO();
-                            if((node.path("cur_unit").asText()).equals("JPY(100)")) {
-                                dto.setCurUnit("JPY");
-                                dto.setDealBasR(node.path("deal_base_R").asText());
-                                dto.setTimeStamp(node.path("time_stamp").asText());
-                            } else {
-                                dto.setCurUnit(node.get("cur_unit").asText());
-                                dto.setDealBasR(node.get("deal_bas_r").asText());
-                                dto.setTimeStamp(LocalDateTime.now().toString());
+                                double exchange_dbr = Double.parseDouble(node.path("deal_bas_r").asText().replace(",", ""));
+
+                                if ((node.path("cur_unit").asText()).equals("JPY(100)")) {
+                                    exchange_dbr = Math.round(exchange_dbr) / 100.0;
+                                    dto.setCurUnit("JPY");
+                                    dto.setDealBasR(Double.toString(exchange_dbr));
+                                    dto.setTimeStamp(formattedDate);
+
+                                } else {
+                                    dto.setCurUnit(node.get("cur_unit").asText());
+                                    dto.setDealBasR(Double.toString(exchange_dbr));
+                                    dto.setTimeStamp(formattedDate);
+                                }
+
+                                log.info("[3] 데이터베이스에 저장...");
+
+                                ExchangeRate exchangeRate = new ExchangeRate();
+                                exchangeRate.setCurNm(CurrencyToCountry.get(dto.getCurUnit()));
+                                exchangeRate.setCurUnit(dto.getCurUnit());
+                                exchangeRate.setDealBasR(Double.parseDouble(dto.getDealBasR()));
+                                exchangeRate.setTimestamp(LocalDate.parse(dto.getTimeStamp()));
+
+                                exchangeRateRepository.save(exchangeRate);
+                                log.info("[4] 데이터베이스에 저장 완료");
                             }
-
-                            log.info("[3] 데이터베이스에 저장...");
-
-                            ExchangeRate exchangeRate = new ExchangeRate();
-                            exchangeRate.setCurNm(CurrencyToCountry.get(dto.getCurUnit()));
-                            exchangeRate.setCurUnit(dto.getCurUnit());
-                            exchangeRate.setTimestamp(LocalDateTime.parse(dto.getTimeStamp()));
-
-                            exchangeRateRepository.save(exchangeRate);
-                            log.info("[4] 데이터베이스에 저장 완료");
                         }
                     }
                 }

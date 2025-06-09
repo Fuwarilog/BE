@@ -3,8 +3,7 @@ package com.skuniv.fuwarilog.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -24,9 +23,10 @@ public class ExchangeRate extends BaseEntity {
 
     @Column(name="cur_nm")
     private String curNm;
+
     @Column(name = "deal_bas_r")
     private Double dealBasR;
 
     @Column(name="timestamp")
-    private LocalDateTime timestamp;
+    private LocalDate timestamp;
 }
