@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -283,7 +284,7 @@ public class TripService {
             }
 
             Set<LocalDate> newContentDates = new HashSet<>();
-            for (LocalDate d = infoDTO.getStartDate().minusDays(1); !d.isAfter(infoDTO.getEndDate()); d = d.plusDays(1)) {
+            for (LocalDate d = infoDTO.getStartDate().minusDays(1); !d.isAfter(infoDTO.getEndDate().minusDays(1)); d = d.plusDays(1)) {
                 newContentDates.add(d);
             }
 
@@ -293,13 +294,17 @@ public class TripService {
             Set<LocalDate> toRemove = new HashSet<>(existingDates);
             toRemove.removeAll(newDates);
 
-            Set<DiaryList> toRemoveList = new HashSet<>(existingList);
-            toRemoveList.removeAll(newContentDates);
+            Set<DiaryList> toRemoveList = existingList.stream()
+                            .filter(list -> !newContentDates.contains(list.getDate()))
+                                    .collect(Collectors.toSet());
+
+            log.info(toRemoveList.iterator().toString());
 
             // 추가된 일정의 다이어리 생성
             for(LocalDate d : toAdd) {
                 DiaryList addDiaryList = DiaryList.builder()
                         .diary(diary)
+                        .googleEventId(diary.getGoogleEventId())
                         .date(d)
                         .build();
                 diaryListRepository.save(addDiaryList);
@@ -307,6 +312,7 @@ public class TripService {
                 diaryContentRepository.save(DiaryContent.builder()
                         .diaryListId(addDiaryList.getId())
                         .userId(userId)
+                        .googleEventId(addDiaryList.getGoogleEventId())
                         .tripDate(d)
                         .build());
             }
