@@ -8,7 +8,6 @@ import com.skuniv.fuwarilog.dto.Location.LocationResponse;
 import com.skuniv.fuwarilog.dto.VisitedRouteDocument.VisitedRouteDocumentRequest;
 import com.skuniv.fuwarilog.dto.VisitedRouteDocument.VisitedRouteDocumentResponse;
 import com.skuniv.fuwarilog.repository.UserRepository;
-import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.LocationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
