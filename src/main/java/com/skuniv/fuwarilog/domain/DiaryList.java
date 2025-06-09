@@ -30,5 +30,5 @@ public class DiaryList extends BaseEntity{
     private LocalDate date;
 
     @Column(name = "is_public")
-    private Boolean isPublic;
+    private Boolean isPublic = false;
 }
