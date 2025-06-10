@@ -15,4 +15,6 @@ public interface DiaryContentRepository extends MongoRepository<DiaryContent, St
     void deleteByDiaryListIdAndTripDate(long id, LocalDate date);
 
     void deleteByGoogleEventId(String googleEventId);
+
+    Optional<DiaryContent> findByDiaryListId(Long diaryListId);
 }
