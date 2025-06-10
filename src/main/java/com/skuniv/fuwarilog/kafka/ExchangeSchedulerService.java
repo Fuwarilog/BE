@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -19,7 +21,7 @@ public class ExchangeSchedulerService {
      */
     @Scheduled(cron = "0 0 0 * * ?")
     public void deleteOldRates() {
-        LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
+        LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
         int result = exchangeRateRepository.deleteByTimestampBefore(sixMonthsAgo);
         log.info("6개월 이상된 환율 {}개 삭제", result);
     }

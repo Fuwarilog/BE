@@ -37,17 +37,19 @@ public class ExchangeRateDataService {
     /**
      * @implSpec 실시간 환율 데이터 연동 및 전달
      */
-    @Scheduled(cron = "0 0/1 * * * *")
+    @Scheduled(cron = "0/10 * * * * *")
     public void fetchAndSendExchangeRates() {
         // 환율 실시간 API 연동
         try{
             log.info("[1] Start fetchAndSendExchangeRates");
 
-            for (LocalDate date = LocalDate.parse("2024-12-31"); !date.isEqual(LocalDate.now()); date = date.plusDays(1)) {
+            LocalDate latestSavedDate = exchangeRateRepository.findMaxTimestamp()
+                    .orElse(LocalDate.parse("2024-12-31"));
+
+            for (LocalDate date = latestSavedDate.plusDays(1); !date.isAfter(LocalDate.now()); date.plusDays(1)) {
                 log.info(date.toString());
 
                 String formattedDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-                log.info(formattedDate);
 
                 String uri = UriComponentsBuilder.fromUriString("https://www.koreaexim.go.kr/site/program/financial/exchangeJSON")
                         .queryParam("authkey", apiKey)
@@ -94,6 +96,13 @@ public class ExchangeRateDataService {
                                     dto.setTimeStamp(formattedDate);
                                 }
 
+                                boolean exists = exchangeRateRepository.existsByTimestampAndCurUnit(LocalDate.parse(dto.getTimeStamp()), dto.getCurUnit());
+
+                                if(exists) {
+                                    log.info("중복 데이터 제외: {}, {}", dto.getTimeStamp(), dto.getCurUnit());
+                                    continue;
+                                }
+
                                 log.info("[3] 데이터베이스에 저장...");
 
                                 ExchangeRate exchangeRate = new ExchangeRate();
@@ -107,6 +116,8 @@ public class ExchangeRateDataService {
                             }
                         }
                     }
+                } else {
+                    continue;
                 }
             }
 
