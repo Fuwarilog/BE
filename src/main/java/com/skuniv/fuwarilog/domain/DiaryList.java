@@ -2,6 +2,8 @@ package com.skuniv.fuwarilog.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.DynamicInsert;
 
 import java.time.LocalDate;
 
@@ -11,6 +13,7 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@DynamicInsert
 @Table(name= "diary_list")
 public class DiaryList extends BaseEntity{
 
@@ -30,5 +33,6 @@ public class DiaryList extends BaseEntity{
     private LocalDate date;
 
     @Column(name = "is_public", nullable = false)
-    private Boolean isPublic = false;
+    @ColumnDefault("0")
+    private Boolean isPublic;
 }
