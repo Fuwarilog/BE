@@ -27,7 +27,6 @@ import java.util.*;
 @Transactional
 public class ExchangeRateDataService {
 
-    //private final KafkaTemplate<String, String> kafkaTemplate;
     private final RestTemplate restTemplate;
     private final ExchangeRateRepository exchangeRateRepository;
 
@@ -37,16 +36,16 @@ public class ExchangeRateDataService {
     /**
      * @implSpec 실시간 환율 데이터 연동 및 전달
      */
-    @Scheduled(cron = "0/10 * * * * *")
+    @Scheduled(cron = "0/15 * * * * *")
     public void fetchAndSendExchangeRates() {
         // 환율 실시간 API 연동
         try{
             log.info("[1] Start fetchAndSendExchangeRates");
 
             LocalDate latestSavedDate = exchangeRateRepository.findMaxTimestamp()
-                    .orElse(LocalDate.parse("2024-12-31"));
+                    .orElse(LocalDate.parse("2024-12-30"));
 
-            for (LocalDate date = latestSavedDate.plusDays(1); !date.isAfter(LocalDate.now()); date.plusDays(1)) {
+            for (LocalDate date = latestSavedDate.plusDays(1); !date.isAfter(LocalDate.now()); date = date.plusDays(1)) {
                 log.info(date.toString());
 
                 String formattedDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -72,6 +71,7 @@ public class ExchangeRateDataService {
 
                 // (1) null이 아닌 경우 데이터 받음
                 if (!Objects.requireNonNull(response.getBody()).isEmpty()) {
+
                     if (response.getStatusCode() == HttpStatus.OK) {
                         ObjectMapper mapper = new ObjectMapper();
                         JsonNode root = mapper.readTree(response.getBody());
@@ -83,6 +83,7 @@ public class ExchangeRateDataService {
                                 ExchangeRateRequest.ExchangeRateDTO dto = new ExchangeRateRequest.ExchangeRateDTO();
 
                                 double exchange_dbr = Double.parseDouble(node.path("deal_bas_r").asText().replace(",", ""));
+
 
                                 if ((node.path("cur_unit").asText()).equals("JPY(100)")) {
                                     exchange_dbr = Math.round(exchange_dbr) / 100.0;
@@ -98,7 +99,7 @@ public class ExchangeRateDataService {
 
                                 boolean exists = exchangeRateRepository.existsByTimestampAndCurUnit(LocalDate.parse(dto.getTimeStamp()), dto.getCurUnit());
 
-                                if(exists) {
+                                if (exists) {
                                     log.info("중복 데이터 제외: {}, {}", dto.getTimeStamp(), dto.getCurUnit());
                                     continue;
                                 }
@@ -116,8 +117,6 @@ public class ExchangeRateDataService {
                             }
                         }
                     }
-                } else {
-                    continue;
                 }
             }
 
