@@ -145,7 +145,7 @@ public class DiaryService {
      */
     public DiaryContent editDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image) {
         try {
-            DiaryContent content = diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId)
+            DiaryContent content = diaryContentRepository.findByDiaryListId(diaryListId)
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
             content.setContent(dto.getContent());
@@ -190,7 +190,7 @@ public class DiaryService {
      */
     public DiaryContent getDiaryContent(Long userId, Long diaryListId) {
         try {
-            return diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId)
+            return diaryContentRepository.findByDiaryListId(diaryListId)
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
         } catch (Exception e){
             log.error(e.getMessage());
@@ -206,8 +206,7 @@ public class DiaryService {
      */
     @Transactional
     public void removeTagFromContent(Long userId, Long diaryListId, String tag) {
-        DiaryContent contentDoc = diaryContentRepository
-                .findByUserIdAndDiaryListId(userId, diaryListId)
+        DiaryContent contentDoc = diaryContentRepository.findByDiaryListId(diaryListId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
 
         String currentContent = contentDoc.getContent();
