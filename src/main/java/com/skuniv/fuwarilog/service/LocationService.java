@@ -215,14 +215,6 @@ public class LocationService {
                         content.setTags(new ArrayList<>());
                     }
                     content.getTags().add(tag);
-
-                    String currentContent = Optional.ofNullable(content.getContent()).orElse("");
-                    log.info(currentContent);
-                    if (!currentContent.contains(tagText)) {
-                        String updatedContent = tagText + "\n" + currentContent;
-                        log.info(updatedContent);
-                        content.setContent(updatedContent);
-                    }
                     list.setUpdatedAt(LocalDateTime.now()); // diarycontent가 아닌 DiaryList의 uodatedAt을 업데이트 해야한다.
                     diaryContentRepository.save(content);
                 }
@@ -239,9 +231,7 @@ public class LocationService {
     public void deleteBookmark(Long userId, Long locationId) {
         Location location = locationRepository.findByIdAndUserId(locationId, userId);
 
-        location.setBookmarked(false);
-        location.setBookmarkedAt(null);
-        locationRepository.save(location);
+        locationRepository.delete(location);
 
         // 다이어리에서 태그 제거
         List<DiaryContent> contentOpt = diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());

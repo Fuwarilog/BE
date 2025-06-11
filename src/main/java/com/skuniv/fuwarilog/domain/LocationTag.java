@@ -8,7 +8,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "location_tag")
 public class LocationTag {
 
     @Field("place_name")
