@@ -187,41 +187,44 @@ public class LocationService {
 
             // 3. 다이어리 내용에 태그 삽입
             List<DiaryContent> contentOpt = diaryContentRepository.findByUserIdAndTripDate(userId, LocalDate.now());
-            DiaryContent content = contentOpt.stream().findFirst()
-                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
+            Optional<DiaryContent> optionalContent = contentOpt.stream().findFirst();
 
-            DiaryList list = diaryListRepository.findById(content.getDiaryListId())
-                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+            if (optionalContent.isPresent()) {
+                DiaryContent content = optionalContent.get();
 
-            // 이미 존재하는 태그인지 확인
-            String tagText = "#" + location.getPlaceName().replaceAll("\\s+", "");
-            boolean tagExists = content.getTags() != null && content.getTags().stream()
-                    .anyMatch(tag -> tag.getTagText().equals(tagText));
+                DiaryList list = diaryListRepository.findById(content.getDiaryListId())
+                        .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
-            if (!tagExists) {
-                LocationTag tag = LocationTag.builder()
-                        .placeName(location.getPlaceName())
-                        .placeUrl(location.getPlaceUrl())
-                        .address(location.getAddress())
-                        .latitude(location.getLatitude())
-                        .longitude(location.getLongitude())
-                        .tagText(tagText)
-                        .build();
+                // 이미 존재하는 태그인지 확인
+                String tagText = "#" + location.getPlaceName().replaceAll("\\s+", "");
+                boolean tagExists = content.getTags() != null && content.getTags().stream()
+                        .anyMatch(tag -> tag.getTagText().equals(tagText));
 
-                if (content.getTags() == null) {
-                    content.setTags(new ArrayList<>());
+                if (!tagExists) {
+                    LocationTag tag = LocationTag.builder()
+                            .placeName(location.getPlaceName())
+                            .placeUrl(location.getPlaceUrl())
+                            .address(location.getAddress())
+                            .latitude(location.getLatitude())
+                            .longitude(location.getLongitude())
+                            .tagText(tagText)
+                            .build();
+
+                    if (content.getTags() == null) {
+                        content.setTags(new ArrayList<>());
+                    }
+                    content.getTags().add(tag);
+
+                    String currentContent = Optional.ofNullable(content.getContent()).orElse("");
+                    log.info(currentContent);
+                    if (!currentContent.contains(tagText)) {
+                        String updatedContent = tagText + "\n" + currentContent;
+                        log.info(updatedContent);
+                        content.setContent(updatedContent);
+                    }
+                    list.setUpdatedAt(LocalDateTime.now()); // diarycontent가 아닌 DiaryList의 uodatedAt을 업데이트 해야한다.
+                    diaryContentRepository.save(content);
                 }
-                content.getTags().add(tag);
-
-                String currentContent = Optional.ofNullable(content.getContent()).orElse("");
-                log.info(currentContent);
-                if (!currentContent.contains(tagText)) {
-                    String updatedContent = tagText + "\n" + currentContent;
-                    log.info(updatedContent);
-                    content.setContent(updatedContent);
-                }
-                list.setUpdatedAt(LocalDateTime.now()); // diarycontent가 아닌 DiaryList의 uodatedAt을 업데이트 해야한다.
-                diaryContentRepository.save(content);
             }
 
             return LocationResponse.LocationInfoDTO.from(location);
