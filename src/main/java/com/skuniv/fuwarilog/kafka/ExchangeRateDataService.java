@@ -84,18 +84,9 @@ public class ExchangeRateDataService {
 
                                 double exchange_dbr = Double.parseDouble(node.path("deal_bas_r").asText().replace(",", ""));
 
-
-                                if ((node.path("cur_unit").asText()).equals("JPY(100)")) {
-                                    exchange_dbr = Math.round(exchange_dbr) / 100.0;
-                                    dto.setCurUnit("JPY");
-                                    dto.setDealBasR(Double.toString(exchange_dbr));
-                                    dto.setTimeStamp(formattedDate);
-
-                                } else {
-                                    dto.setCurUnit(node.get("cur_unit").asText());
-                                    dto.setDealBasR(Double.toString(exchange_dbr));
-                                    dto.setTimeStamp(formattedDate);
-                                }
+                                dto.setCurUnit(node.get("cur_unit").asText());
+                                dto.setDealBasR(Double.toString(exchange_dbr));
+                                dto.setTimeStamp(formattedDate);
 
                                 boolean exists = exchangeRateRepository.existsByTimestampAndCurUnit(LocalDate.parse(dto.getTimeStamp()), dto.getCurUnit());
 
