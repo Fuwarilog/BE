@@ -68,7 +68,7 @@ public class ExchangeRateDataService {
                 Map<String, String> CurrencyToCountry = new HashMap<>() {{
                     put("USD", "미국");
                     put("JPY", "일본");
-                    put("CNH", "중국");
+                    put("CNY", "중국");
                 }};
 
                 // (1) null이 아닌 경우 데이터 받음
@@ -91,11 +91,17 @@ public class ExchangeRateDataService {
                                     dto.setDealBasR(Double.toString(exchange_dbr));
                                     dto.setTimeStamp(formattedDate);
 
+                                } else if ((node.path("cur_unit").asText()).equals("CNH")) {
+                                    dto.setCurUnit("CNY");
+                                    dto.setDealBasR(Double.toString(exchange_dbr));
+                                    dto.setTimeStamp(formattedDate);
+
                                 } else {
                                     dto.setCurUnit(node.get("cur_unit").asText());
                                     dto.setDealBasR(Double.toString(exchange_dbr));
                                     dto.setTimeStamp(formattedDate);
                                 }
+
 
                                 boolean exists = exchangeRateRepository.existsByTimestampAndCurUnit(LocalDate.parse(dto.getTimeStamp()), dto.getCurUnit());
 
