@@ -18,6 +18,7 @@ public class ExchangeSchedulerService {
 
     /**
      * @implSpec 데이터 스케쥴러
+     * 매일 00:00 exchange_rate 테이블 업데이트
      */
     @Scheduled(cron = "0 0 0 * * ?")
     public void deleteOldRates() {

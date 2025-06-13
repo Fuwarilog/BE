@@ -35,8 +35,10 @@ public class ExchangeRateDataService {
 
     /**
      * @implSpec 실시간 환율 데이터 연동 및 전달
+     * 매일 오전 11시에 환율 값 업데이트
+     * 공휴일, 주말에는 은행 업무 휴무이므로 null
      */
-    @Scheduled(cron = "0/15 * * * * *")
+    @Scheduled(cron = "0 0 11 * * *")
     public void fetchAndSendExchangeRates() {
         // 환율 실시간 API 연동
         try{
