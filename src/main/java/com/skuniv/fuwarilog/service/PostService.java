@@ -35,10 +35,20 @@ public class PostService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
-            List<Post> post = postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+            List<Post> postList = postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
 
-            return post.stream()
-                    .map(PostResponse.PostListDTO::from)
+            return postList.stream()
+                    .map(post -> PostResponse.PostListDTO.builder()
+                            .id(post.getId())
+                            .title(post.getDiaryList().getDiary().getTitle())
+                            .userId(post.getDiaryList().getDiary().getTrip().getUser().getId())
+                            .userName(post.getDiaryList().getDiary().getTrip().getUser().getName())
+                            .date(post.getDiaryList().getDate())
+                            .likesCount(post.getLikesCount())
+                            .watchCount(post.getWatchCount())
+                            .createdDate(post.getCreatedAt())
+                            .updatedDate(post.getUpdatedAt())
+                            .build())
                     .collect(Collectors.toList());
 
         } catch (Exception e) {

@@ -16,20 +16,13 @@ public class PostResponse {
     @Schema(title = "RES 01: 게시글 반환 DTO")
     public static class PostListDTO {
         private long id;
+        private long userId;
+        private String userName;
+        private String title;
         private LocalDate date;
         private int likesCount;
         private int watchCount;
         private LocalDateTime createdDate;
         private LocalDateTime updatedDate;
-
-        public static PostResponse.PostListDTO from(Post post) {
-            return new PostListDTO(
-                    post.getId(),
-                    post.getDiaryList().getDate(),
-                    post.getLikesCount(),
-                    post.getWatchCount(),
-                    post.getCreatedAt(),
-                    post.getUpdatedAt());
-        }
     }
 }
