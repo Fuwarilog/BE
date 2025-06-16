@@ -25,4 +25,24 @@ public class PostResponse {
         private LocalDateTime createdDate;
         private LocalDateTime updatedDate;
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @Schema(title = "RES 02 : 특정 게시글 정보 반환 DTO")
+    public static class PostInfoDTO {
+        private long id;
+        private long userId;
+        private String userName;
+        private String title;
+        private long diaryListId;
+        private String content;
+        private LocalDate date;
+        private int likesCount;
+        private boolean likeState;
+        private int watchCount;
+        private boolean bookmarkState;
+        private LocalDateTime createdDate;
+        private LocalDateTime updatedDate;
+    }
 }

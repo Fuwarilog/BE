@@ -12,6 +12,5 @@ import java.util.List;
 public interface PostBookmarkRepository extends JpaRepository<PostBookmark,Long> {
     PostBookmark findByUserIdAndPostId(long userId, long postId);
 
-
     List<PostBookmark> findAllByUser(User user);
 }
