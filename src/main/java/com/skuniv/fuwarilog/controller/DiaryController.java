@@ -125,7 +125,7 @@ public class DiaryController {
         return ResponseEntity.ok("태그 삭제 완료");
     }
 
-    @PostMapping(value = "/content/{diaryListId}/{isPublic}")
+    @PostMapping(value = "/content/{diaryListId}")
     @Operation(summary = "다이어리 공개여부 설정 API", description = " diaryListId, isPublic 입력 시 공개여부 설정 변경됨")
     public ResponseEntity<DiaryListResponse.isPublicDiaryDTO> isPublicDiary(
             Authentication authentication,
