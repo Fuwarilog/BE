@@ -2,6 +2,8 @@ package com.skuniv.fuwarilog.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@DynamicUpdate
 @Table(name= "post")
 public class Post extends BaseEntity{
     @Id
@@ -26,7 +29,8 @@ public class Post extends BaseEntity{
     @Column(name = "likes_count")
     private int likesCount;
 
-    @Column(name = "watch_count")
+    @Column(name = "watch_count", nullable = false)
+    @ColumnDefault("0")
     private int watchCount;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
