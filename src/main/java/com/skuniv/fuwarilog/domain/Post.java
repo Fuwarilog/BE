@@ -26,8 +26,17 @@ public class Post extends BaseEntity{
     @JoinColumn(name = "diarylist_id")
     private DiaryList diaryList;
 
-    @Column(name = "likes_count")
+    @Column(name = "likes_count", nullable = false)
+    @ColumnDefault("0")
     private int likesCount;
+
+    @Column(name = "like_state", nullable = false)
+    @ColumnDefault("0")
+    private boolean likeState;
+
+    @Column(name = "bookmark_state", nullable = false)
+    @ColumnDefault("0")
+    private boolean bookmarkState;
 
     @Column(name = "watch_count", nullable = false)
     @ColumnDefault("0")
