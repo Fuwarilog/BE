@@ -48,4 +48,7 @@ public class Post extends BaseEntity{
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     private List<PostBookmark> postBookmarks = new ArrayList<>();
 
+    public int incrementWatchCount() {
+        return watchCount++;
+    }
 }

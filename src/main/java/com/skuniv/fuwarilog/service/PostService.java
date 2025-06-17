@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ public class PostService {
     private final PostBookmarkRepository postBookmarkRepository;
     private final PostLikeRepository postLikeRepository;
     private final DiaryContentRepository diaryContentRepository;
+    private final PostViewRepository postViewRepository;
 
     /**
      * @implSpec 게시글 조회
@@ -65,9 +67,7 @@ public class PostService {
      * @param postId 게시글 고유 번호
      * @return PostResponse.PostListDTO 특정 게시글 내용 반환
      */
-    public PostResponse.PostInfoDTO getPostContent(long userId, long postId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+    public PostResponse.PostInfoDTO getPostContent(Long userId, Long postId) {
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_POST));
@@ -80,7 +80,6 @@ public class PostService {
             throw new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT);
         }
 
-        String redisKey = post.getId().toString();
         boolean bookmarkState = postBookmarkState(postBookmark);
         boolean likeState = postLikeState(postLike);
 
@@ -100,6 +99,43 @@ public class PostService {
                 .updatedDate(post.getUpdatedAt())
                 .build();
 
+    }
+
+    /**
+     * @implSpec 조회수 증가
+     * @param userId 사용자 고유 번호
+     * @param postId 게시글 고유 번호
+     * @param ipAddress 접속자 ip
+     */
+    public void increasePostView(Long postId, Long userId, String ipAddress) {
+        LocalDate today = LocalDate.now();
+
+        boolean hasViewed;
+
+        if (userId != null) {
+            hasViewed = postViewRepository.existsByUserIdAndPostIdAndViewDate(userId, postId, today);
+        } else {
+            hasViewed = postViewRepository.existsByIpAddressAndPostIdAndViewDate(ipAddress, postId, today);
+        }
+
+        if (!hasViewed) {
+            // PostView 저장
+            PostView postView = new PostView();
+            postView.setPostId(postId);
+            postView.setViewDate(today);
+            if (userId != null) {
+                postView.setUserId(userId);
+            } else {
+                postView.setIpAddress(ipAddress);
+            }
+            postViewRepository.save(postView);
+
+            // Post 조회수 증가
+            Post post = postRepository.findById(postId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_POST));
+            post.incrementWatchCount();
+            postRepository.save(post);
+        }
     }
 
     // 북마크 상태 반환

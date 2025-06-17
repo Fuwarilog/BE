@@ -10,6 +10,7 @@ import com.skuniv.fuwarilog.repository.UserRepository;
 import com.skuniv.fuwarilog.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -44,12 +45,20 @@ public class PostController {
     @Operation(summary = "특정 포스트 상세 조회 API", description = "postId 입력시 해당 포스트의 상세 정보 조회")
     public ResponseEntity<PostResponse.PostInfoDTO> getPostContent (
             Authentication authentication,
-            @PathVariable long postId) {
+            @PathVariable long postId,
+            HttpServletRequest request) {
 
         String email = (String) authentication.getName();
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        String ip = request.getHeader("X-forwarded-for");
+        if (ip == null || ip.isEmpty()) {
+            ip = request.getRemoteAddr();
+        }
+
+        postService.increasePostView(postId, user.getId(), ip);
 
         PostResponse.PostInfoDTO results = postService.getPostContent(user.getId(), postId);
         return ResponseEntity.ok(results);
