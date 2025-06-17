@@ -24,12 +24,9 @@ spring:
       uuid-representation: standard
       ssl:
         enabled: true
-    redis:
-      host: 127.0.0.1
-      port: 6379
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
