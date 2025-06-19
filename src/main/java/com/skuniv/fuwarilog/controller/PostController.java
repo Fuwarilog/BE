@@ -7,10 +7,10 @@ import com.skuniv.fuwarilog.dto.Post.PostResponse;
 import com.skuniv.fuwarilog.dto.PostBookmark.PostBookmarkResponse;
 import com.skuniv.fuwarilog.dto.PostLike.PostLikeResponse;
 import com.skuniv.fuwarilog.repository.UserRepository;
-import com.skuniv.fuwarilog.security.jwt.JwtTokenProvider;
 import com.skuniv.fuwarilog.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -24,7 +24,6 @@ import java.util.List;
 @Tag(name = "Post API", description = "게시글 관련 조회, 북마크, 좋아요 관련 기능")
 public class PostController {
 
-    private final JwtTokenProvider jwtTokenProvider;
     private final PostService postService;
     private final UserRepository userRepository;
 
@@ -40,6 +39,32 @@ public class PostController {
         // 3. 포스트 조회
         List<PostResponse.PostListDTO> results = postService.getPosts(user.getId());
         return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/{postId}")
+    @Operation(summary = "특정 포스트 상세 조회 API", description = "postId 입력시 해당 포스트의 상세 정보 조회")
+    public ResponseEntity<PostResponse.PostInfoDTO> getPostContent (
+            Authentication authentication,
+            @PathVariable long postId,
+            HttpServletRequest request) {
+
+        String email = (String) authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        String ipAdress = extractClientIp(request);
+
+        PostResponse.PostInfoDTO results = postService.getPostContent(user.getId(), postId, ipAdress);
+        return ResponseEntity.ok(results);
+    }
+
+    private String extractClientIp(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isEmpty()) {
+            return xff.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     @PostMapping("/bookmarks/{postId}")

@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 public interface PostBookmarkRepository extends JpaRepository<PostBookmark,Long> {
-    PostBookmark findByUserIdAndPostId(long userId, long postId);
+    PostBookmark findByUserIdAndPostId(Long userId, Long postId);
 
     List<PostBookmark> findAllByUser(User user);
 }

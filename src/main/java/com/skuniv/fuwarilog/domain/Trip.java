@@ -46,7 +46,4 @@ public class Trip extends BaseEntity{
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL)
     private List<Diary> diaries = new ArrayList<>();
-
-    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL)
-    private List<CurrencyPrediction> currencyPredictions = new ArrayList<>();
 }
