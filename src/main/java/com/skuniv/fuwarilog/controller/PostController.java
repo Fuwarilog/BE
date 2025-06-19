@@ -53,15 +53,18 @@ public class PostController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
-        String ip = request.getHeader("X-forwarded-for");
-        if (ip == null || ip.isEmpty()) {
-            ip = request.getRemoteAddr();
-        }
+        String ipAdress = extractClientIp(request);
 
-        postService.increasePostView(postId, user.getId(), ip);
-
-        PostResponse.PostInfoDTO results = postService.getPostContent(user.getId(), postId);
+        PostResponse.PostInfoDTO results = postService.getPostContent(user.getId(), postId, ipAdress);
         return ResponseEntity.ok(results);
+    }
+
+    private String extractClientIp(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isEmpty()) {
+            return xff.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     @PostMapping("/bookmarks/{postId}")

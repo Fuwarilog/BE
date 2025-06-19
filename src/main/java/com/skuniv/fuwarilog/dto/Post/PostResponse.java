@@ -31,17 +31,17 @@ public class PostResponse {
     @Builder
     @Schema(title = "RES 02 : 특정 게시글 정보 반환 DTO")
     public static class PostInfoDTO {
-        private long id;
-        private long userId;
+        private Long id;
+        private Long userId;
         private String userName;
         private String title;
-        private long diaryListId;
+        private Long diaryListId;
         private String content;
         private LocalDate date;
         private int likesCount;
-        private boolean likeState;
+        private Boolean likeState;
         private int watchCount;
-        private boolean bookmarkState;
+        private Boolean bookmarkState;
         private LocalDateTime createdDate;
         private LocalDateTime updatedDate;
     }

@@ -67,7 +67,9 @@ public class PostService {
      * @param postId 게시글 고유 번호
      * @return PostResponse.PostListDTO 특정 게시글 내용 반환
      */
-    public PostResponse.PostInfoDTO getPostContent(Long userId, Long postId) {
+    public PostResponse.PostInfoDTO getPostContent(long userId, long postId, String ipAddress) {
+        // 1. 조회수 증가 처리
+        increasePostView(postId, userId, ipAddress);
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_POST));
@@ -107,7 +109,7 @@ public class PostService {
      * @param postId 게시글 고유 번호
      * @param ipAddress 접속자 ip
      */
-    public void increasePostView(Long postId, Long userId, String ipAddress) {
+    private void increasePostView(Long postId, Long userId, String ipAddress) {
         LocalDate today = LocalDate.now();
 
         boolean hasViewed;
