@@ -229,11 +229,13 @@ public class PostService {
                 postLikeRepository.save(postLike);
                 liked = true;
 
+                post.setLikeState(liked);
                 post.setLikesCount(post.getLikesCount()+1);
                 postRepository.save(post);
             } else {
                 postLikeRepository.delete(postLike);
 
+                post.setLikeState(liked);
                 post.setLikesCount(post.getLikesCount()-1);
                 postRepository.save(post);
             }
