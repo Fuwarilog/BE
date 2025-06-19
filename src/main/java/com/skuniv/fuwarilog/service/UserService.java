@@ -116,6 +116,7 @@ public class UserService {
                                 return PostLikeResponse.PostLikesStateDTO.builder()
                                         .postId(postLike.getPost().getId())
                                         .userId(postLike.getUser().getId())
+                                        .liked(postLike.getPost().isLikeState())
                                         .build();
                             }).collect(Collectors.toList())
                     ).build();
@@ -144,6 +145,7 @@ public class UserService {
                                 return PostBookmarkResponse.PostBookmarkStateDTO.builder()
                                         .postId(postBookmark.getPost().getId())
                                         .userId(postBookmark.getUser().getId())
+                                        .bookmarked(postBookmark.getPost().isBookmarkState())
                                         .build();
                             }).collect(Collectors.toList())
                     ).build();
