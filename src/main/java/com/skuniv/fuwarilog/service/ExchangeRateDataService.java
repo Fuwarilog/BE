@@ -1,4 +1,4 @@
-package com.skuniv.fuwarilog.kafka;
+package com.skuniv.fuwarilog.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -127,7 +127,7 @@ public class ExchangeRateDataService {
             }
 
         } catch (Exception e) {
-                log.error("OpenAPI 호출 또는 Kafka 전송 실패", e);
+                log.error("OpenAPI 호출 실패", e);
                 throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
     }

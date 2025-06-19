@@ -5,9 +5,7 @@ import com.skuniv.fuwarilog.config.converter.MongoWriteConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.convert.CustomConversions;
-import org.springframework.data.mongodb.MongoDatabaseFactory;
-import org.springframework.data.mongodb.core.convert.*;
-import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
+
 import java.util.List;
 
 @Configuration

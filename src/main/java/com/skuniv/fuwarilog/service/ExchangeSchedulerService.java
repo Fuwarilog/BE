@@ -1,4 +1,4 @@
-package com.skuniv.fuwarilog.kafka;
+package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.repository.ExchangeRateRepository;
 import lombok.RequiredArgsConstructor;
@@ -7,7 +7,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -17,7 +16,7 @@ public class ExchangeSchedulerService {
     private final ExchangeRateRepository exchangeRateRepository;
 
     /**
-     * @implSpec 데이터 스케쥴러
+     * @implSpec 데이터 스케쥴러 - 실시간 환율 테이블
      * 매일 00:00 exchange_rate 테이블 업데이트
      */
     @Scheduled(cron = "0 0 0 * * ?")
