@@ -1,5 +1,8 @@
 package com.skuniv.fuwarilog.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
 import com.skuniv.fuwarilog.domain.*;
@@ -10,11 +13,11 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +34,7 @@ public class TripService {
     private final DiaryRepository diaryRepository;
     private final DiaryListRepository diaryListRepository;
     private final DiaryContentRepository diaryContentRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     /**
      * @implSpec 구글켈린더에 월별 일정 조회
@@ -164,7 +168,8 @@ public class TripService {
             diaryContentRepository.save(newDiaryContent);
         }
 
-        return TripResponse.TripInfoDTO.builder()
+        TripResponse.TripInfoDTO result = TripResponse.TripInfoDTO.builder()
+                .userId(user.getId())
                 .tripId(newTrip.getId())
                 .title(newTrip.getTitle())
                 .description(newTrip.getDescription())
@@ -173,6 +178,15 @@ public class TripService {
                 .country(newTrip.getCountry())
                 .eventId(newTrip.getGoogleEventId())
                 .build();
+
+        try {
+            kafkaTemplate.send("triprequest", result).get();
+            log.info("카프카 전송 성공");
+        } catch(Exception e) {
+            log.error("카프카 전송 실패", e);
+            throw new RuntimeException("카프카 메시지 전송 실패");
+        }
+        return result;
     }
 
     /**

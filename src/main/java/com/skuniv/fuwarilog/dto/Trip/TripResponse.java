@@ -18,13 +18,31 @@ public class TripResponse {
     @Builder
     @Schema(title = "RES 01: 여행일정 반환 DTO")
     public static class TripInfoDTO {
+        @Schema(description = "사용자 고유번호", example = "1")
+        private long userId;
+
+        @Schema(description = "일정 고유번호", example = "1")
         private long tripId;
+
+        @Schema(description = "제목", example = "제목")
         private String title;
+
+        @Schema(description = "설명", example = "string")
         private String description;
+
+        @Schema(description = "국가", example = "미국")
         private String country;
+
+        @Schema(description = "구글캘린더Id", example = "string")
         private String eventId;
+
+        @Schema(description = "시작일", example = "2025-06-20")
         private LocalDate startDate;
+
+        @Schema(description = "종료일", example = "2025-06-21")
         private LocalDate endDate;
+
+        @Schema(description = "다이어리 목록", example = "...")
         private List<DiaryResponse.DiaryResDTO> diaries;
     }
 

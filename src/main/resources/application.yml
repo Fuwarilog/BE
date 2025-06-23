@@ -13,17 +13,13 @@ spring:
   application:
     name: fuwarilog
   datasource:
-    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?serverTimezone=Asia/Seoul
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?characterEncoding=UTF-8&serverTimezone=Asia/Seoul
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     mongodb:
       uri: mongodb+srv://${MONGO_USER}:${MONGO_PW}@fuwarilog.ttscmet.mongodb.net/${MONGO_DB}?retryWrites=true&w=majority&appName=fuwarilog
-      auto-index-creation: true
-      uuid-representation: standard
-      ssl:
-        enabled: true
   jpa:
     hibernate:
       ddl-auto: none
@@ -52,18 +48,20 @@ spring:
             authorization-uri: https://accounts.google.com/o/oauth2/auth
             token-uri: https://oauth2.googleapis.com/token
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
-
   kafka:
     bootstrap-servers: localhost:9092
-    consumer:
-      group-id: exchange-rate-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: '*'
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.trusted.packages: '*'
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+exchange:
+  api:
+    key: ${EXCHANGE_API_KEY}
 
 management:
   endpoints:

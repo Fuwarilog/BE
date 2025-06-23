@@ -6,6 +6,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Struct;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +44,18 @@ public class User extends BaseEntity {
 
     @Column(name="pricture_url")
     private String pictureUrl;
+
+    @Column(name = "is_active", columnDefinition = "TINYINT(1)")
+    private Boolean isActive;
+
+    @Column(name = "is_staff", columnDefinition = "TINYINT(1)")
+    private Boolean isStaff;
+
+    @Column(name = "is_superuser", columnDefinition = "TINYINT(1)")
+    private Boolean isSuperuser;
+
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Trip> trips = new ArrayList<>();
