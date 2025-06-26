@@ -210,7 +210,7 @@ public class DiaryService {
         DiaryContent contentDoc = diaryContentRepository.findByDiaryListId(diaryListId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
 
-        String currentContent = contentDoc.getContent();
+        String currentContent = contentDoc.getContent() != null ?  contentDoc.getContent() : "";
         DiaryList list = diaryListRepository.findById(contentDoc.getDiaryListId())
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
@@ -221,7 +221,7 @@ public class DiaryService {
 
         List<LocationTag> tags = contentDoc.getTags();
         if (tags != null && !tags.isEmpty()) {
-            tags.removeIf(t -> t.getPlaceName().equalsIgnoreCase(tag));
+            tags.removeIf(t -> t.getTagText().equalsIgnoreCase("#" + tag));
         }
 
         list.setUpdatedAt(LocalDateTime.now());
