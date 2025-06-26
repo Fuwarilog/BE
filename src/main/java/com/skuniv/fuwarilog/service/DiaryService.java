@@ -144,19 +144,24 @@ public class DiaryService {
      * @param diaryListId 다이어리 고유 번호
      * @param dto 다이어리 고유번호 내용
      */
-    public DiaryContent editDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image) {
+    public DiaryContent editDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image, String tag) {
         try {
             DiaryContent content = diaryContentRepository.findByDiaryListId(diaryListId)
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
-            content.setContent(dto.getContent());
+            if (tag != null && !tag.isEmpty()) {
+                removeTagFromContent(content, tag);
+            }
 
             if (image != null && !image.isEmpty()) {
                 String imageUrl = storeDiaryImage(image);
                 content.setImageUrls(List.of(imageUrl));
             }
 
+            content.setContent(dto.getContent());
+
             return diaryContentRepository.save(content);
+
         } catch (Exception e){
             log.error(e.getMessage());
             throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
@@ -183,6 +188,34 @@ public class DiaryService {
         }
     }
 
+    private void removeTagFromContent(DiaryContent contentDoc, String tag) {
+        String currentContent = contentDoc.getContent() != null ? contentDoc.getContent() : "";
+
+        // 태그 정규화
+        String normalizedTag = tag.replaceAll("\\s+", "").replaceFirst("^#", "");
+        String tagToRemove = "#" + normalizedTag;
+
+        // 본문 내용에서 태그 문자열 제거
+        String updatedContent = currentContent.replace(tagToRemove, "")
+                .replaceAll("(?m)^\\s*$[\r\n]+", "")
+                .trim();
+        contentDoc.setContent(updatedContent);
+
+        // tags 배열에서 해당 태그 삭제
+        List<LocationTag> tags = contentDoc.getTags();
+        if (tags != null && !tags.isEmpty()) {
+            tags.removeIf(t -> {
+                if (t.getTagText() == null) return false;
+                String dbTag = t.getTagText().replaceAll("\\s+", "").replaceFirst("^#", "");
+                return dbTag.equalsIgnoreCase(normalizedTag);
+            });
+
+            // 수정된 태그 리스트 설정
+            contentDoc.setTags(tags);
+        }
+    }
+
+
 
     /**
      * @implSpec 다이어리 내용 조회
@@ -197,37 +230,6 @@ public class DiaryService {
             log.error(e.getMessage());
             throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
-    }
-
-    /**
-     * @implSpec 다이어리 내용 안의 태그 삭제
-     * @param userId 사용자 고유 번호
-     * @param diaryListId 다이어리 고유 일정
-     * @param tag 특정 String 태그
-     */
-    @Transactional
-    public void removeTagFromContent(Long userId, Long diaryListId, String tag) {
-        DiaryContent contentDoc = diaryContentRepository.findByDiaryListId(diaryListId)
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
-
-        String currentContent = contentDoc.getContent() != null ?  contentDoc.getContent() : "";
-        DiaryList list = diaryListRepository.findById(contentDoc.getDiaryListId())
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
-
-        String tagToRemove = "#" + tag.replaceAll("\\s+", "");
-
-        String updatedContent = currentContent.replace(tagToRemove, "").replaceAll("(?m)^\\s*$[\r\n]+", "");
-        contentDoc.setContent(updatedContent.trim());
-
-        List<LocationTag> tags = contentDoc.getTags();
-        if (tags != null && !tags.isEmpty()) {
-            tags.removeIf(t -> t.getTagText().equalsIgnoreCase("#" + tag));
-        }
-
-        list.setUpdatedAt(LocalDateTime.now());
-
-        diaryContentRepository.save(contentDoc);
-        diaryListRepository.save(list);
     }
 
     /**
