@@ -1,5 +1,6 @@
 package com.skuniv.fuwarilog.repository;
 
+import com.skuniv.fuwarilog.domain.Post;
 import com.skuniv.fuwarilog.domain.PostView;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Repository
 public interface PostViewRepository extends JpaRepository<PostView,Long> {
@@ -20,4 +22,6 @@ public interface PostViewRepository extends JpaRepository<PostView,Long> {
     @Transactional
     @Query("DELETE FROM PostView pv WHERE pv.viewDate < :threshold")
     void deleteOldViews(@Param("threshold") LocalDate threshold);
+
+    void deleteAll(List<Post> posts);
 }

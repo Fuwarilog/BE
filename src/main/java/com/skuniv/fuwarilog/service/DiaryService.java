@@ -83,6 +83,7 @@ public class DiaryService {
                             return DiaryListResponse.DiaryListResDTO.builder()
                                     .id(diaryList1.getId())
                                     .diaryId(diaryList1.getDiary().getId())
+                                    .title(diaryList1.getDiary().getTitle())
                                     .date(diaryList1.getDate())
                                     .isPublic(diaryList1.getIsPublic())
                                     .build();

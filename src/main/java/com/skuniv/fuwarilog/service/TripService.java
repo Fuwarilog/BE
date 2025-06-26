@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,7 +35,8 @@ public class TripService {
     private final DiaryRepository diaryRepository;
     private final DiaryListRepository diaryListRepository;
     private final DiaryContentRepository diaryContentRepository;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final PostRepository postRepository;
+    private final PostViewRepository postViewRepository;
 
     /**
      * @implSpec 구글켈린더에 월별 일정 조회
@@ -191,8 +193,23 @@ public class TripService {
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.TRIP_NOT_FOUND));
 
         googleCalendarService.deleteEvent(userId, trip.getGoogleEventId());
-        tripRepository.delete(trip);
+
+        // 해당 Trip에 속한 DiaryList들 조회
+        Diary diary = diaryRepository.findByTripId(trip.getId());
+
+        List<DiaryList> diaryLists = diary.getDiaryLists();
+
+        if (!diaryLists.isEmpty()) {
+            List<Post> posts = postRepository.findAllByDiaryListIn(diaryLists);
+            if (!posts.isEmpty()) {
+                postRepository.deleteAll(posts);
+                postViewRepository.deleteAll(posts);
+            }
+        }
+
         diaryContentRepository.deleteByGoogleEventId(trip.getGoogleEventId());
+
+        tripRepository.delete(trip);
     }
 
     /**
