@@ -18,10 +18,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Google Map API", description = "구글맵 데이터 반환")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/maps")
+@Tag(name = "Google Map 관련 API", description = "구글맵 데이터 반환")
 public class LocationController {
 
     private final LocationService locationService;

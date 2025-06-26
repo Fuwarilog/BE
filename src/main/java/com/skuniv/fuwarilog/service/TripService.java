@@ -179,13 +179,6 @@ public class TripService {
                 .eventId(newTrip.getGoogleEventId())
                 .build();
 
-        try {
-            kafkaTemplate.send("triprequest", result).get();
-            log.info("카프카 전송 성공");
-        } catch(Exception e) {
-            log.error("카프카 전송 실패", e);
-            throw new RuntimeException("카프카 메시지 전송 실패");
-        }
         return result;
     }
 
