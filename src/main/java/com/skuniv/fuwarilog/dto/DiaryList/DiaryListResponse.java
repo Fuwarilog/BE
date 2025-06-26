@@ -15,6 +15,7 @@ public class DiaryListResponse {
     public static class DiaryListResDTO {
         private long id;
         private long diaryId;
+        private String title;
         private LocalDate date;
         private Boolean isPublic;
 
@@ -22,6 +23,7 @@ public class DiaryListResponse {
             return new DiaryListResDTO(
                     diaryList.getId(),
                     diaryList.getDiary().getId(),
+                    diaryList.getDiary().getTitle(),
                     diaryList.getDate(),
                     diaryList.getIsPublic());
         }

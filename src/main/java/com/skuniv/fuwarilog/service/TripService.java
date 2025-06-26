@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,7 +35,8 @@ public class TripService {
     private final DiaryRepository diaryRepository;
     private final DiaryListRepository diaryListRepository;
     private final DiaryContentRepository diaryContentRepository;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final PostRepository postRepository;
+    private final PostViewRepository postViewRepository;
 
     /**
      * @implSpec 구글켈린더에 월별 일정 조회
@@ -122,11 +124,11 @@ public class TripService {
      * @param country 여행지 입력
      * @return id 여행일정 Trip 아이디
     * */
-    public TripResponse.TripInfoDTO createEvent(String userEmail, String title, String description, String startDate, String endDate, String country) throws Exception {
-        User user = userRepository.findByEmail(userEmail)
+    public TripResponse.TripInfoDTO createEvent(Long userId, String title, String description, String startDate, String endDate, String country) throws Exception {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
-        String eventId = googleCalendarService.addEvent(userEmail, title, description, startDate, endDate);
+        String eventId = googleCalendarService.addEvent(userId, title, description, startDate, endDate);
 
         log.info("eventId: {}", eventId);
         Trip newTrip = Trip.builder()
@@ -179,27 +181,38 @@ public class TripService {
                 .eventId(newTrip.getGoogleEventId())
                 .build();
 
-        try {
-            kafkaTemplate.send("triprequest", result).get();
-            log.info("카프카 전송 성공");
-        } catch(Exception e) {
-            log.error("카프카 전송 실패", e);
-            throw new RuntimeException("카프카 메시지 전송 실패");
-        }
         return result;
     }
 
     /**
      * @implSpec 구글 캘린더 일정 삭제 시 서버 Trip 데이터도 같이 삭제됨
-     * @param id 일정 아이디
+     * @param tripId 일정 아이디
      * */
-    public void deleteEvent(String userEmail, Long id) throws Exception{
-        Trip trip = tripRepository.findById(id)
+    public void deleteEvent(Long userId, Long tripId) throws Exception{
+        Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.TRIP_NOT_FOUND));
 
-        googleCalendarService.deleteEvent(userEmail, trip.getGoogleEventId());
-        tripRepository.delete(trip);
+        googleCalendarService.deleteEvent(userId, trip.getGoogleEventId());
+
+        // 해당 Trip에 속한 DiaryList들 조회
+        Diary diary = diaryRepository.findByTripId(trip.getId());
+
+        List<DiaryList> diaryLists = diary.getDiaryLists();
+
+        if (!diaryLists.isEmpty()) {
+            List<Post> posts = postRepository.findAllByDiaryListIn(diaryLists);
+            if (!posts.isEmpty()) {
+                List<Long> postIds = posts.stream()
+                        .map(Post::getId)
+                        .collect(Collectors.toList());
+                postViewRepository.deleteAllByPostIdIn(postIds);
+                postRepository.deleteAll(posts);
+            }
+        }
+
         diaryContentRepository.deleteByGoogleEventId(trip.getGoogleEventId());
+
+        tripRepository.delete(trip);
     }
 
     /**

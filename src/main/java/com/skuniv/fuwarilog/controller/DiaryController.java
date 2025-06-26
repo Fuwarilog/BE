@@ -23,12 +23,12 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/diaries")
-@Tag(name = "Diary API", description = "다이어리 관련 조회, 작성, 삭제 + 지도맵의 태그 관리")
+@Tag(name = "Diary API", description = "다이어리 관련 조회, 작성(태그 관리), 삭제")
 public class DiaryController {
     private final DiaryService diaryService;
     private final UserRepository userRepository;
 
-    @GetMapping("/")
+    @GetMapping("")
     @Operation(summary = "다이어리 폴더 조회 API", description = "사용자 id 입력 시 다이어리 폴더 조회")
     public ResponseEntity<List<TripResponse.TripInfoDTO>> getAllDiaries(
             Authentication authentication) {
@@ -58,7 +58,7 @@ public class DiaryController {
     }
 
     @PostMapping(value = "/content/{diaryListId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "다이어리 내용 작성 API", description = "diaryListId, 내용 입력 시 작성 완료")
+    @Operation(summary = "다이어리 새로 생성 API", description = "diaryListId, 내용 입력 시 새로운 다이어리로 작성 완료")
     public ResponseEntity<?> createDiaryContent(
             Authentication authentication,
             @PathVariable Long diaryListId,
@@ -76,7 +76,7 @@ public class DiaryController {
     }
 
     @PutMapping(value = "/content/{diaryListId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "다이어리 내용 수정 API", description = "diaryListId를 입력, 내용 입력 시 수정 완료")
+    @Operation(summary = "기존 다이어리 내용 작성 API", description = "diaryListId를 입력, 내용 입력 시 기존 다이어리의 내용 수정 완료")
     public ResponseEntity<?> editDiaryContent(
             Authentication authentication,
             @PathVariable Long diaryListId,
@@ -108,7 +108,7 @@ public class DiaryController {
         return ResponseEntity.ok(content);
     }
 
-    @DeleteMapping("/content/{diaryListId}/{tag}")
+    @DeleteMapping("/content/{diaryListId}")
     @Operation(summary = "다이어리 내용 태그 삭제 API", description = "특정 태그String 입력 시 다이어리 내용의 해당 태그 삭제")
     public ResponseEntity<?> deleteTagFromContent(
             Authentication authentication,
@@ -125,7 +125,7 @@ public class DiaryController {
         return ResponseEntity.ok("태그 삭제 완료");
     }
 
-    @PostMapping(value = "/content/{diaryListId}")
+    @PostMapping("/content/public/{diaryListId}")
     @Operation(summary = "다이어리 공개여부 설정 API", description = " diaryListId, isPublic 입력 시 공개여부 설정 변경됨")
     public ResponseEntity<DiaryListResponse.isPublicDiaryDTO> isPublicDiary(
             Authentication authentication,

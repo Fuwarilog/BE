@@ -99,7 +99,7 @@ public class TripController {
         // 3. 구글캘린더 일정 -> 여행 일정
         try {
             TripResponse.TripInfoDTO result = tripService.createEvent(
-                    email,
+                    user.getId(),
                     event.getTitle(),
                     event.getDescription(),
                     event.getStartDate().toString(),
@@ -139,7 +139,7 @@ public class TripController {
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
         try {
-            tripService.deleteEvent(email, tripId);
+            tripService.deleteEvent(user.getId(), tripId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.notFound().build();

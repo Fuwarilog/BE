@@ -35,8 +35,8 @@ public class GoogleCalendarService {
      * @param startDate 여행 시작 날짜
      * @param endDate 여행 마지막 날짜
      */
-    public String addEvent(String userEmail, String title, String description, String startDate, String endDate) throws IOException {
-        String googleAccessToken = getGoogleAccessToken(userEmail);
+    public String addEvent(Long userId, String title, String description, String startDate, String endDate) throws IOException {
+        String googleAccessToken = getGoogleAccessToken(userId);
 
         Map<String, Object> event = new HashMap<>();
         event.put("summary", title);
@@ -80,8 +80,8 @@ public class GoogleCalendarService {
      * @implSpec Google Calendar에 일정을 삭제
      * @param eventId 특정 일정 id
      */
-    public void deleteEvent(String userEmail, String eventId) throws IOException {
-        String googleAccessToken = getGoogleAccessToken(userEmail);
+    public void deleteEvent(Long userId, String eventId) throws IOException {
+        String googleAccessToken = getGoogleAccessToken(userId);
 
         HttpRequestFactory requestFactory = new NetHttpTransport()
                 .createRequestFactory(request -> {
@@ -96,44 +96,46 @@ public class GoogleCalendarService {
         log.info("Deleted event: {}", eventId);
     }
 
-    /**
-     * @implSpec Google Calendar에 일정을 조회
-     */
-    public String listEvents(String userEmail, LocalDate date) throws IOException {
-        String googleAccessToken = getGoogleAccessToken(userEmail);
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String start = date.atStartOfDay(ZoneId.of("Asia/Seoul")).toInstant().toString();
-        String end = date.plusDays(1).atStartOfDay(ZoneId.of("Asia/Seoul")).toInstant().toString();
-
-        String url = UriComponentsBuilder.fromHttpUrl(CALENDAR_API_URL)
-                .queryParam("timeMin", start)
-                .queryParam("timeMax", end)
-                .queryParam("singleEvents", "true")
-                .queryParam("orderBy", "startTime")
-                .build()
-                .toUriString();
-
-        HttpRequestFactory requestFactory = new NetHttpTransport()
-                .createRequestFactory(request -> {
-                    request.getHeaders().setAuthorization("Bearer " + googleAccessToken);
-                });
-
-        HttpRequest request = requestFactory.buildGetRequest(new GenericUrl(url));
-        HttpResponse response = request.execute();
-        String responseString = response.parseAsString();
-
-        log.info("Events fetched: {}", responseString);
-        return responseString;
-    }
+//    /**
+//     * @implSpec Google Calendar에 일정을 조회
+//     */
+//    public String listEvents(String userEmail, LocalDate date) throws IOException {
+//        String googleAccessToken = getGoogleAccessToken(userEmail);
+//
+//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//        String start = date.atStartOfDay(ZoneId.of("Asia/Seoul")).toInstant().toString();
+//        String end = date.plusDays(1).atStartOfDay(ZoneId.of("Asia/Seoul")).toInstant().toString();
+//
+//        String url = UriComponentsBuilder.fromHttpUrl(CALENDAR_API_URL)
+//                .queryParam("timeMin", start)
+//                .queryParam("timeMax", end)
+//                .queryParam("singleEvents", "true")
+//                .queryParam("orderBy", "startTime")
+//                .build()
+//                .toUriString();
+//
+//        HttpRequestFactory requestFactory = new NetHttpTransport()
+//                .createRequestFactory(request -> {
+//                    request.getHeaders().setAuthorization("Bearer " + googleAccessToken);
+//                });
+//
+//        HttpRequest request = requestFactory.buildGetRequest(new GenericUrl(url));
+//        HttpResponse response = request.execute();
+//        String responseString = response.parseAsString();
+//
+//        log.info("Events fetched: {}", responseString);
+//        return responseString;
+//    }
 
     /**
      * DB에서 Google accessToken 조회 유틸
      */
-    private String getGoogleAccessToken(String userEmail) {
-        String accessToken =  userRepository.findByEmail(userEmail)
+    private String getGoogleAccessToken(Long userId) {
+        String accessToken =  userRepository.findById(userId)
                 .map(User::getGoogleAccessToken)
-                .orElseThrow(() -> new RuntimeException("Google access token not found for user: " + userEmail));
+                .orElseThrow(() -> new RuntimeException("Google access token not found for user: " + userId));
+
+        log.info("Google access token: {}", accessToken);
 
         return accessToken;
     }

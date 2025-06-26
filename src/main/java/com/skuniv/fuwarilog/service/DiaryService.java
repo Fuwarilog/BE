@@ -83,6 +83,7 @@ public class DiaryService {
                             return DiaryListResponse.DiaryListResDTO.builder()
                                     .id(diaryList1.getId())
                                     .diaryId(diaryList1.getDiary().getId())
+                                    .title(diaryList1.getDiary().getTitle())
                                     .date(diaryList1.getDate())
                                     .isPublic(diaryList1.getIsPublic())
                                     .build();
@@ -209,15 +210,24 @@ public class DiaryService {
         DiaryContent contentDoc = diaryContentRepository.findByDiaryListId(diaryListId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
 
-        String currentContent = contentDoc.getContent();
+        String currentContent = contentDoc.getContent() != null ?  contentDoc.getContent() : "";
         DiaryList list = diaryListRepository.findById(contentDoc.getDiaryListId())
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
         String tagToRemove = "#" + tag.replaceAll("\\s+", "");
+
         String updatedContent = currentContent.replace(tagToRemove, "").replaceAll("(?m)^\\s*$[\r\n]+", "");
         contentDoc.setContent(updatedContent.trim());
+
+        List<LocationTag> tags = contentDoc.getTags();
+        if (tags != null && !tags.isEmpty()) {
+            tags.removeIf(t -> t.getTagText().equalsIgnoreCase("#" + tag));
+        }
+
         list.setUpdatedAt(LocalDateTime.now());
+
         diaryContentRepository.save(contentDoc);
+        diaryListRepository.save(list);
     }
 
     /**
