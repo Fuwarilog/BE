@@ -202,8 +202,11 @@ public class TripService {
         if (!diaryLists.isEmpty()) {
             List<Post> posts = postRepository.findAllByDiaryListIn(diaryLists);
             if (!posts.isEmpty()) {
+                List<Long> postIds = posts.stream()
+                        .map(Post::getId)
+                        .collect(Collectors.toList());
+                postViewRepository.deleteAllByPostIdIn(postIds);
                 postRepository.deleteAll(posts);
-                postViewRepository.deleteAll(posts);
             }
         }
 

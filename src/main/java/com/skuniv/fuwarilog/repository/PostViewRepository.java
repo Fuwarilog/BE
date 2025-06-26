@@ -23,5 +23,5 @@ public interface PostViewRepository extends JpaRepository<PostView,Long> {
     @Query("DELETE FROM PostView pv WHERE pv.viewDate < :threshold")
     void deleteOldViews(@Param("threshold") LocalDate threshold);
 
-    void deleteAll(List<Post> posts);
+    void deleteAllByPostIdIn(List<Long> postIds);
 }

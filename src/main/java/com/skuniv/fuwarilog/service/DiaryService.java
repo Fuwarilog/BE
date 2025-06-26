@@ -215,10 +215,19 @@ public class DiaryService {
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
         String tagToRemove = "#" + tag.replaceAll("\\s+", "");
+
         String updatedContent = currentContent.replace(tagToRemove, "").replaceAll("(?m)^\\s*$[\r\n]+", "");
         contentDoc.setContent(updatedContent.trim());
+
+        List<LocationTag> tags = contentDoc.getTags();
+        if (tags != null && !tags.isEmpty()) {
+            tags.removeIf(t -> t.getPlaceName().equalsIgnoreCase(tag));
+        }
+
         list.setUpdatedAt(LocalDateTime.now());
+
         diaryContentRepository.save(contentDoc);
+        diaryListRepository.save(list);
     }
 
     /**
