@@ -76,10 +76,11 @@ public class DiaryController {
     }
 
     @PutMapping(value = "/content/{diaryListId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "기존 다이어리 내용 작성 API", description = "diaryListId를 입력, 내용 입력 시 기존 다이어리의 내용 수정 완료")
+    @Operation(summary = "기존 다이어리 내용 작성 API", description = "diaryListId를 입력, 내용, tag 입력 시 기존 다이어리의 내용 수정 완료")
     public ResponseEntity<?> editDiaryContent(
             Authentication authentication,
             @PathVariable Long diaryListId,
+            @RequestParam(required = false) String tag,
             @RequestPart(required = false) DiaryContentRequest.ContentDTO dto,
             @RequestPart(value = "image", required = false) MultipartFile image) {
 
@@ -89,7 +90,7 @@ public class DiaryController {
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
         // 3. 내용 작성
-        DiaryContent result = diaryService.editDiaryContent(dto, diaryListId, user.getId(), image);
+        DiaryContent result = diaryService.editDiaryContent(dto, diaryListId, user.getId(), image, tag);
         return ResponseEntity.ok(result);
     }
 
@@ -106,23 +107,6 @@ public class DiaryController {
 
         DiaryContent content = diaryService.getDiaryContent(user.getId(), diaryListId);
         return ResponseEntity.ok(content);
-    }
-
-    @DeleteMapping("/content/{diaryListId}")
-    @Operation(summary = "다이어리 내용 태그 삭제 API", description = "특정 태그String 입력 시 다이어리 내용의 해당 태그 삭제")
-    public ResponseEntity<?> deleteTagFromContent(
-            Authentication authentication,
-            @RequestParam String tag,
-            @PathVariable Long diaryListId) {
-
-        String email = (String) authentication.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
-
-        // 3. 다이어리 내의 태그 삭제
-        diaryService.removeTagFromContent(user.getId(), diaryListId, tag);
-        return ResponseEntity.ok("태그 삭제 완료");
     }
 
     @PostMapping("/content/public/{diaryListId}")
