@@ -122,11 +122,11 @@ public class TripService {
      * @param country 여행지 입력
      * @return id 여행일정 Trip 아이디
     * */
-    public TripResponse.TripInfoDTO createEvent(String userEmail, String title, String description, String startDate, String endDate, String country) throws Exception {
-        User user = userRepository.findByEmail(userEmail)
+    public TripResponse.TripInfoDTO createEvent(Long userId, String title, String description, String startDate, String endDate, String country) throws Exception {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
-        String eventId = googleCalendarService.addEvent(userEmail, title, description, startDate, endDate);
+        String eventId = googleCalendarService.addEvent(userId, title, description, startDate, endDate);
 
         log.info("eventId: {}", eventId);
         Trip newTrip = Trip.builder()
@@ -184,13 +184,13 @@ public class TripService {
 
     /**
      * @implSpec 구글 캘린더 일정 삭제 시 서버 Trip 데이터도 같이 삭제됨
-     * @param id 일정 아이디
+     * @param tripId 일정 아이디
      * */
-    public void deleteEvent(String userEmail, Long id) throws Exception{
-        Trip trip = tripRepository.findById(id)
+    public void deleteEvent(Long userId, Long tripId) throws Exception{
+        Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.TRIP_NOT_FOUND));
 
-        googleCalendarService.deleteEvent(userEmail, trip.getGoogleEventId());
+        googleCalendarService.deleteEvent(userId, trip.getGoogleEventId());
         tripRepository.delete(trip);
         diaryContentRepository.deleteByGoogleEventId(trip.getGoogleEventId());
     }

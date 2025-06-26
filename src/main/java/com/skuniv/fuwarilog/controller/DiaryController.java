@@ -28,7 +28,7 @@ public class DiaryController {
     private final DiaryService diaryService;
     private final UserRepository userRepository;
 
-    @GetMapping("/")
+    @GetMapping("")
     @Operation(summary = "다이어리 폴더 조회 API", description = "사용자 id 입력 시 다이어리 폴더 조회")
     public ResponseEntity<List<TripResponse.TripInfoDTO>> getAllDiaries(
             Authentication authentication) {
