@@ -86,4 +86,18 @@ public class UserController {
         UserResponse.UserBookmarkDTO result = userService.getPostBookmarksByUser(user.getId());
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/my-public-post")
+    @Operation(summary = "내가 공개한 게시글 조회", description = "성공시 공개한 게시글 리스트 반환")
+    public ResponseEntity<UserResponse.UserPublicDTO> getIsPublicPostByUser (
+            Authentication authentication) {
+
+        String email = (String) authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        UserResponse.UserPublicDTO result = userService.getIsPublicPostByUser(user.getId());
+        return ResponseEntity.ok(result);
+    }
 }
