@@ -261,9 +261,12 @@ public class LocationService {
      * @return duration, distance, instructions 경로 탐색 값 반환
      */
     public VisitedRouteDocumentResponse.RouteDTO getRoute(Long userId, VisitedRouteDocumentRequest.RouteRequestDTO dto) {
+        String originPlaceId = getPlaceId(dto.getOrigin());
+        String destinationPlaceId = getPlaceId(dto.getDestination());
+
         String url = UriComponentsBuilder.fromHttpUrl("https://maps.googleapis.com/maps/api/directions/json")
-                .queryParam("origin", dto.getOrigin())
-                .queryParam("destination", dto.getDestination())
+                .queryParam("origin", "place_id:" + originPlaceId)
+                .queryParam("destination", "place_id:" + destinationPlaceId)
                 .queryParam("mode", "transit")
                 .queryParam("transit_mode", "subway|bus")
                 .queryParam("departure_time", "now")
@@ -279,6 +282,7 @@ public class LocationService {
         }
 
         List<Map<String, Object>> routes = (List<Map<String, Object>>) response.get("routes");
+
         Map<String, Object> route = routes.get(0);
         Map<String, Object> leg = ((List<Map<String, Object>>) route.get("legs")).get(0);
 
@@ -303,6 +307,29 @@ public class LocationService {
         visitedRouteRepository.save(routeDoc);
         return new VisitedRouteDocumentResponse.RouteDTO(distanceText, durationText, dto.getOrigin(), dto.getDestination());
     }
+
+    private String getPlaceId(String placeName) {
+        String url = UriComponentsBuilder.fromHttpUrl("https://maps.googleapis.com/maps/api/place/findplacefromtext/json")
+                .queryParam("input", placeName)
+                .queryParam("inputtype", "textquery")
+                .queryParam("fields", "place_id")
+                .queryParam("key", apiKey)
+                .build()
+                .toUriString();
+
+        Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+        if (response == null || !"OK".equals(response.get("status"))) {
+            throw new RuntimeException("Google Places API 호출 실패: " + response);
+        }
+
+        List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+        if (candidates.isEmpty()) {
+            throw new RuntimeException("장소 검색 결과 없음: " + placeName);
+        }
+
+        return candidates.get(0).get("place_id").toString();
+    }
+
 
     public LocationResponse.LocationDetailDTO getLocationDetail(String placeId) {
 
