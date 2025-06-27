@@ -37,37 +37,37 @@ public class DiaryService {
     private final PostRepository postRepository;
 
     /**
-     * @implSpec 다이어리 폴더 조회
      * @param userId 사용자 고유 번호
+     * @implSpec 다이어리 폴더 조회
      */
     public List<TripResponse.TripInfoDTO> getAllDiaries(Long userId) {
-        try{
+        try {
             List<Trip> trips = tripRepository.findAllByUserId(userId);
             return trips.stream()
                     .map(trip -> {
-                    return TripResponse.TripInfoDTO.builder()
-                            .tripId(trip.getId())
-                            .title(trip.getTitle())
-                            .country(trip.getCountry())
-                            .eventId(trip.getGoogleEventId())
-                            .description(trip.getDescription())
-                            .startDate(trip.getStartDate())
-                            .endDate(trip.getEndDate())
-                            .diaries(trip.getDiaries().stream()
-                                    .map(DiaryResponse.DiaryResDTO::from)
-                                    .collect(Collectors.toList()))
-                            .build();
-                }).collect(Collectors.toList());
-        } catch (Exception e){
+                        return TripResponse.TripInfoDTO.builder()
+                                .tripId(trip.getId())
+                                .title(trip.getTitle())
+                                .country(trip.getCountry())
+                                .eventId(trip.getGoogleEventId())
+                                .description(trip.getDescription())
+                                .startDate(trip.getStartDate())
+                                .endDate(trip.getEndDate())
+                                .diaries(trip.getDiaries().stream()
+                                        .map(DiaryResponse.DiaryResDTO::from)
+                                        .collect(Collectors.toList()))
+                                .build();
+                    }).collect(Collectors.toList());
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
     }
 
     /**
-     * @implSpec 다이어리 폴더내 리스트 조회
      * @param userId 사용자 고유 번호
      * @return result 다이어리 리스트 반환
+     * @implSpec 다이어리 폴더내 리스트 조회
      */
     public List<DiaryListResponse.DiaryListResDTO> getAllDiaryList(Long userId, Long diaryId, Boolean isPublic) {
         try {
@@ -95,17 +95,17 @@ public class DiaryService {
                         .collect(Collectors.toList());
             }
             return result;
-        } catch (Exception e){
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
     }
 
     /**
-     * @implSpec 다이어리 내용 작성 기능
-     * @param userId 사용자 고유 번호
+     * @param userId      사용자 고유 번호
      * @param diaryListId 다이어리 고유 번호
-     * @param dto 다이어리 고유번호 내용
+     * @param dto         다이어리 고유번호 내용
+     * @implSpec 다이어리 내용 작성 기능
      */
     public DiaryContent createDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image) {
         try {
@@ -131,7 +131,7 @@ public class DiaryService {
             }
 
             return diaryContentRepository.save(content);
-        } catch (Exception e){
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
         }
@@ -139,10 +139,10 @@ public class DiaryService {
 
 
     /**
-     * @implSpec 다이어리 내용 수정 기능
      * @param userId 사용자 고유 번호
      * @param diaryListId 다이어리 고유 번호
      * @param dto 다이어리 고유번호 내용
+     * @implSpec 다이어리 내용 수정 기능
      */
     public DiaryContent editDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image, String tag, Boolean isPublic) {
         try {
@@ -169,7 +169,7 @@ public class DiaryService {
 
             return diaryContentRepository.save(content);
 
-        } catch (Exception e){
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
         }
@@ -227,7 +227,7 @@ public class DiaryService {
             DiaryList diaryList = diaryListRepository.findById(content.getDiaryListId())
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
-            if(diaryList.getIsPublic().equals(isPublic)) {
+            if (diaryList.getIsPublic().equals(isPublic)) {
                 log.info("다이어리 상태가 동일함으로 변경하지 않음");
                 return;
             }
@@ -255,7 +255,7 @@ public class DiaryService {
             diaryListRepository.save(diaryList);
             log.info(diaryList.toString());
 
-        } catch (Exception e){
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
@@ -263,15 +263,52 @@ public class DiaryService {
 
 
     /**
-     * @implSpec 다이어리 내용 조회
      * @param userId 사용자 고유 번호
      * @param diaryListId 다이어리 고유 번호
+     * @implSpec 다이어리 내용 조회
      */
     public DiaryContent getDiaryContent(Long userId, Long diaryListId) {
         try {
             return diaryContentRepository.findByDiaryListId(diaryListId)
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
-        } catch (Exception e){
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
+        }
+    }
+
+
+    /**
+     * @param userId 사용자 고유 번호
+     * @param diaryListId 다이어리 고유 일정
+     * @param isPublic 공개/비공개 설정 값
+     * @implSpec 다이어리 공개/비공개 설정
+     */
+    public DiaryListResponse.isPublicDiaryDTO isPublicDiaryContent(Long diaryListId, Long userId, Boolean isPublic) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+            DiaryList diaryList = diaryListRepository.findById(diaryListId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+
+            Post post = postRepository.findByDiaryList(diaryList);
+
+            if (!isPublic) {
+                postRepository.delete(post);
+            } else {
+                post = Post.builder()
+                        .diaryList(diaryList)
+                        .build();
+                postRepository.save(post);
+            }
+
+            diaryList.setIsPublic(isPublic);
+            diaryListRepository.save(diaryList);
+            log.info(diaryList.toString());
+
+            return DiaryListResponse.isPublicDiaryDTO.from(diaryList);
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }

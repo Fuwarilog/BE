@@ -109,22 +109,22 @@ public class DiaryController {
         DiaryContent content = diaryService.getDiaryContent(user.getId(), diaryListId);
         return ResponseEntity.ok(content);
     }
-//
-//    @PostMapping("/content/public/{diaryListId}")
-//    @Operation(summary = "다이어리 공개여부 설정 API", description = " diaryListId, isPublic 입력 시 공개여부 설정 변경됨")
-//    public ResponseEntity<DiaryListResponse.isPublicDiaryDTO> isPublicDiary(
-//            Authentication authentication,
-//            @PathVariable Long diaryListId,
-//            @RequestParam(required = true) Boolean isPublic) {
-//
-//        String email = (String) authentication.getName();
-//
-//        User user = userRepository.findByEmail(email)
-//                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
-//
-//        // 3. 공개여부 설정
-//        DiaryListResponse.isPublicDiaryDTO result = diaryService.isPublicDiary(diaryListId, user.getId(), isPublic);
-//        return ResponseEntity.ok(result);
-//    }
+
+    @PostMapping("/content/public/{diaryListId}")
+    @Operation(summary = "다이어리 공개여부 설정 API", description = " diaryListId, isPublic 입력 시 공개여부 설정 변경됨")
+    public ResponseEntity<DiaryListResponse.isPublicDiaryDTO> isPublicDiaryContent(
+            Authentication authentication,
+            @PathVariable Long diaryListId,
+            @RequestParam(required = true) Boolean isPublic) {
+
+        String email = (String) authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+        // 3. 공개여부 설정
+        DiaryListResponse.isPublicDiaryDTO result = diaryService.isPublicDiaryContent(diaryListId, user.getId(), isPublic);
+        return ResponseEntity.ok(result);
+    }
 
 }
