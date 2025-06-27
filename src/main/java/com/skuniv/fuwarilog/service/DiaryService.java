@@ -144,15 +144,22 @@ public class DiaryService {
      * @param diaryListId 다이어리 고유 번호
      * @param dto 다이어리 고유번호 내용
      */
-    public DiaryContent editDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image, String tag) {
+    public DiaryContent editDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image, String tag, Boolean isPublic) {
         try {
             DiaryContent content = diaryContentRepository.findByDiaryListId(diaryListId)
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
+            // 1. 공개여부 설정
+            if (isPublic != null) {
+                isPublicDiary(content, isPublic);
+            }
+
+            // 2. 태그 수정 설정
             if (tag != null && !tag.isEmpty()) {
                 removeTagFromContent(content, tag);
             }
 
+            // 3. 이미지 수정 설정
             if (image != null && !image.isEmpty()) {
                 String imageUrl = storeDiaryImage(image);
                 content.setImageUrls(List.of(imageUrl));
@@ -215,6 +222,44 @@ public class DiaryService {
         }
     }
 
+    private void isPublicDiary(DiaryContent content, Boolean isPublic) {
+        try {
+            DiaryList diaryList = diaryListRepository.findById(content.getDiaryListId())
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+
+            if(diaryList.getIsPublic().equals(isPublic)) {
+                log.info("다이어리 상태가 동일함으로 변경하지 않음");
+                return;
+            }
+
+            Post existingPost = postRepository.findByDiaryList(diaryList);
+
+            if (!isPublic) {
+                if (existingPost != null) {
+                    postRepository.delete(existingPost);
+                    log.info("Post 삭제 완료. diaryListId: {}", diaryList.getId());
+                }
+            } else {
+                if (existingPost == null) {
+                    Post post = Post.builder()
+                            .diaryList(diaryList)
+                            .build();
+                    postRepository.save(post);
+                    log.info("새로운 Post 생성 완료");
+                } else {
+                    log.info("이미 존재하는 Post 입니다.");
+                }
+            }
+
+            diaryList.setIsPublic(isPublic);
+            diaryListRepository.save(diaryList);
+            log.info(diaryList.toString());
+
+        } catch (Exception e){
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
+        }
+    }
 
 
     /**
@@ -226,43 +271,6 @@ public class DiaryService {
         try {
             return diaryContentRepository.findByDiaryListId(diaryListId)
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYCONTENT));
-        } catch (Exception e){
-            log.error(e.getMessage());
-            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
-        }
-    }
-
-    /**
-     * @implSpec 다이어리 공개/비공개 설정
-     * @param userId 사용자 고유 번호
-     * @param diaryListId 다이어리 고유 일정
-     * @param isPublic 공개/비공개 설정 값
-     */
-    public DiaryListResponse.isPublicDiaryDTO isPublicDiary(Long diaryListId, Long userId, Boolean isPublic) {
-        try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
-
-            DiaryList diaryList = diaryListRepository.findById(diaryListId)
-                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
-
-            Post post = postRepository.findByDiaryList(diaryList);
-
-            if(!isPublic) {
-                postRepository.delete(post);
-            } else {
-                post = Post.builder()
-                        .diaryList(diaryList)
-                        .build();
-                postRepository.save(post);
-            }
-
-            diaryList.setIsPublic(isPublic);
-            diaryListRepository.save(diaryList);
-            log.info(diaryList.toString());
-
-
-            return DiaryListResponse.isPublicDiaryDTO.from(diaryList);
         } catch (Exception e){
             log.error(e.getMessage());
             throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
