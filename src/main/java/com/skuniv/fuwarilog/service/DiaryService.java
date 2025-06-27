@@ -25,6 +25,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.google.common.io.Files.getFileExtension;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -101,50 +103,15 @@ public class DiaryService {
         }
     }
 
+
     /**
      * @param userId      사용자 고유 번호
      * @param diaryListId 다이어리 고유 번호
      * @param dto         다이어리 고유번호 내용
-     * @implSpec 다이어리 내용 작성 기능
-     */
-    public DiaryContent createDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image) {
-        try {
-            if (diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId).isPresent()) {
-                throw new BadRequestException(ErrorResponseStatus.ALREADY_EXIST_CONTENT);
-            }
-
-            DiaryList list = diaryListRepository.findById(diaryListId)
-                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
-
-            DiaryContent content = DiaryContent.builder()
-                    .userId(userId)
-                    .diaryListId(diaryListId)
-                    .tripDate(list.getDate())
-                    .content(dto.getContent())
-                    .build();
-
-            if (image != null && !image.isEmpty()) {
-                String imageUrl = storeDiaryImage(image);
-                content.setImageUrls(List.of(imageUrl));
-            } else {
-                content.setImageUrls(null);
-            }
-
-            return diaryContentRepository.save(content);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
-        }
-    }
-
-
-    /**
-     * @param userId 사용자 고유 번호
-     * @param diaryListId 다이어리 고유 번호
-     * @param dto 다이어리 고유번호 내용
      * @implSpec 다이어리 내용 수정 기능
      */
-    public DiaryContent editDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image, String tag, Boolean isPublic) {
+
+    public DiaryContent editDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, List<MultipartFile> images, String tag, Boolean isPublic, List<String> deletedImages) {
         try {
             DiaryContent content = diaryContentRepository.findByDiaryListId(diaryListId)
                     .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
@@ -159,40 +126,124 @@ public class DiaryService {
                 removeTagFromContent(content, tag);
             }
 
-            // 3. 이미지 수정 설정
-            if (image != null && !image.isEmpty()) {
-                String imageUrl = storeDiaryImage(image);
-                content.setImageUrls(List.of(imageUrl));
+            // 3. 기존 이미지 URL 리스트 가져오기
+            List<String> currentImageUrls = content.getImageUrls() != null ? new ArrayList<>(content.getImageUrls()) : new ArrayList<>();
+            if (deletedImages != null && !deletedImages.isEmpty()) {
+                deleteDiaryImages(deletedImages, currentImageUrls);
             }
 
-            content.setContent(dto.getContent());
+            if (images != null && !images.isEmpty()) {
+                List<String> newImageUrls = storeDiaryImages(images);
+                currentImageUrls.addAll(newImageUrls);
+            }
+
+            content.setImageUrls(currentImageUrls);
+
+            if (dto != null && dto.getContent() != null) {
+                content.setContent(dto.getContent());
+            }
 
             return diaryContentRepository.save(content);
 
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("일기 콘텐츠 수정 실패: {}", e.getMessage(), e);
             throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
         }
     }
 
-    private String storeDiaryImage(MultipartFile image) {
+    private List<String> storeDiaryImages(List<MultipartFile> images) {
         try {
             String uploadDir = "uploads/diary/";
-            File profile_dir = new File(uploadDir);
-            if (!profile_dir.exists()) profile_dir.mkdir();
+            File diaryDir = new File(uploadDir);
+            if (!diaryDir.exists()) {
+                diaryDir.mkdirs(); // 하위 디렉토리까지 생성
+            }
 
-            String filename = UUID.randomUUID() + "_" + StringUtils.cleanPath(Objects.requireNonNull(image.getOriginalFilename()));
-            Path filePath = Paths.get(uploadDir + filename);
-            Files.write(filePath, image.getBytes());
+            List<String> imageUrls = new ArrayList<>();
 
-            return ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/static/diary/")
-                    .path(filename)
-                    .toUriString();
+            for (MultipartFile image : images) {
+                // 빈 파일 체크
+                if (image.isEmpty()) {
+                    continue;
+                }
+                // 파일 확장자 검증
+                String originalFilename = image.getOriginalFilename();
+                if (originalFilename == null || !isValidImageFile(originalFilename)) {
+                    throw new BadRequestException(ErrorResponseStatus.INVALID_IMAGE_FORMAT);
+                }
+
+                // 고유한 파일명 생성
+                String fileExtension = getFileExtension(originalFilename);
+                String uniqueFilename = UUID.randomUUID().toString() + "_" + StringUtils.cleanPath(originalFilename.replaceAll("[^a-zA-Z0-9.]", "_"));
+
+                // 파일 저장
+                Path filePath = Paths.get(uploadDir + uniqueFilename);
+                Files.write(filePath, image.getBytes());
+
+                // URL 생성
+                String imageUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                        .path("/static/diary/")
+                        .path(uniqueFilename)
+                        .toUriString();
+
+                imageUrls.add(imageUrl);
+                log.info("이미지 저장 완료: {}", uniqueFilename);
+            }
+            return imageUrls;
         } catch (IOException e) {
-            log.error(e.getMessage());
-            throw new BadRequestException(ErrorResponseStatus.SVAE_DIARY_IMAGE_ERROR);
+            log.error("이미지 저장 실패: {}", e.getMessage(), e);
+            throw new BadRequestException(ErrorResponseStatus.SAVE_DIARY_IMAGE_ERROR);
         }
+    }
+
+    private void deleteDiaryImages(List<String> imagesToDelete, List<String> currentImageUrls) {
+        for (String imageUrl : imagesToDelete) {
+            try {
+                // URL에서 파일명 추출
+                String filename = extractFilenameFromUrl(imageUrl);
+                if (filename != null) {
+                    Path filePath = Paths.get("uploads/diary/" + filename);
+                    if (Files.exists(filePath)) {
+                        Files.delete(filePath);
+                        log.info("이미지 파일 삭제 완료: {}", filename);
+                    }
+                }
+
+                currentImageUrls.remove(imageUrl);
+
+            } catch (IOException e) {
+                log.error("이미지 삭제 실패: {}", e.getMessage(), e);
+                currentImageUrls.remove(imageUrl);
+            }
+        }
+    }
+
+    private String extractFilenameFromUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return null;
+        }
+
+        try {
+            String[] parts = imageUrl.split("/");
+            return parts[parts.length - 1];
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return null;
+        }
+    }
+
+    private boolean isValidImageFile(String filename) {
+        if (filename == null) {
+            return false;
+        }
+        String[] allowedExtensions = { "jpg", "jpeg", "png", "gif", "bmp", "png" };
+        return Arrays.stream(allowedExtensions).anyMatch(filename::endsWith);
+    }
+
+    private String getFileExtension(String filename) {
+        if (filename == null) return "";
+        int lastDotIndex = filename.lastIndexOf('.');
+        return lastDotIndex > 0 ? filename.substring(lastDotIndex) : "";
     }
 
     private void removeTagFromContent(DiaryContent contentDoc, String tag) {
@@ -222,48 +273,48 @@ public class DiaryService {
         }
     }
 
-    private void isPublicDiary(DiaryContent content, Boolean isPublic) {
-        try {
-            DiaryList diaryList = diaryListRepository.findById(content.getDiaryListId())
-                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+    private void isPublicDiary(DiaryContent content, Boolean isPublic){
+            try {
+                DiaryList diaryList = diaryListRepository.findById(content.getDiaryListId())
+                        .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
 
-            if (diaryList.getIsPublic().equals(isPublic)) {
-                log.info("다이어리 상태가 동일함으로 변경하지 않음");
-                return;
-            }
-
-            Post existingPost = postRepository.findByDiaryList(diaryList);
-
-            if (!isPublic) {
-                if (existingPost != null) {
-                    postRepository.delete(existingPost);
-                    log.info("Post 삭제 완료. diaryListId: {}", diaryList.getId());
+                if (diaryList.getIsPublic().equals(isPublic)) {
+                    log.info("다이어리 상태가 동일함으로 변경하지 않음");
+                    return;
                 }
-            } else {
-                if (existingPost == null) {
-                    Post post = Post.builder()
-                            .diaryList(diaryList)
-                            .build();
-                    postRepository.save(post);
-                    log.info("새로운 Post 생성 완료");
+
+                Post existingPost = postRepository.findByDiaryList(diaryList);
+
+                if (!isPublic) {
+                    if (existingPost != null) {
+                        postRepository.delete(existingPost);
+                        log.info("Post 삭제 완료. diaryListId: {}", diaryList.getId());
+                    }
                 } else {
-                    log.info("이미 존재하는 Post 입니다.");
+                    if (existingPost == null) {
+                        Post post = Post.builder()
+                                .diaryList(diaryList)
+                                .build();
+                        postRepository.save(post);
+                        log.info("새로운 Post 생성 완료");
+                    } else {
+                        log.info("이미 존재하는 Post 입니다.");
+                    }
                 }
-            }
 
             diaryList.setIsPublic(isPublic);
             diaryListRepository.save(diaryList);
             log.info(diaryList.toString());
 
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
+            } catch (Exception e) {
+                log.error(e.getMessage());
+                throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
     }
 
 
     /**
-     * @param userId 사용자 고유 번호
+     * @param userId      사용자 고유 번호
      * @param diaryListId 다이어리 고유 번호
      * @implSpec 다이어리 내용 조회
      */
@@ -279,9 +330,9 @@ public class DiaryService {
 
 
     /**
-     * @param userId 사용자 고유 번호
+     * @param userId      사용자 고유 번호
      * @param diaryListId 다이어리 고유 일정
-     * @param isPublic 공개/비공개 설정 값
+     * @param isPublic    공개/비공개 설정 값
      * @implSpec 다이어리 공개/비공개 설정
      */
     public DiaryListResponse.isPublicDiaryDTO isPublicDiaryContent(Long diaryListId, Long userId, Boolean isPublic) {
@@ -313,4 +364,40 @@ public class DiaryService {
             throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
         }
     }
+
+//    /** 다이어리 새로 생성
+//     * @param userId      사용자 고유 번호
+//     * @param diaryListId 다이어리 고유 번호
+//     * @param dto         다이어리 고유번호 내용
+//     * @implSpec 다이어리 내용 작성 기능
+//     */
+//    public DiaryContent createDiaryContent(DiaryContentRequest.ContentDTO dto, Long diaryListId, Long userId, MultipartFile image) {
+//        try {
+//            if (diaryContentRepository.findByUserIdAndDiaryListId(userId, diaryListId).isPresent()) {
+//                throw new BadRequestException(ErrorResponseStatus.ALREADY_EXIST_CONTENT);
+//            }
+//
+//            DiaryList list = diaryListRepository.findById(diaryListId)
+//                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.NOT_EXIST_DIARYLIST));
+//
+//            DiaryContent content = DiaryContent.builder()
+//                    .userId(userId)
+//                    .diaryListId(diaryListId)
+//                    .tripDate(list.getDate())
+//                    .content(dto.getContent())
+//                    .build();
+//
+//            if (image != null && !image.isEmpty()) {
+//                String imageUrl = storeDiaryImage(image);
+//                content.setImageUrls(List.of(imageUrl));
+//            } else {
+//                content.setImageUrls(null);
+//            }
+//
+//            return diaryContentRepository.save(content);
+//        } catch (Exception e) {
+//            log.error(e.getMessage());
+//            throw new BadRequestException(ErrorResponseStatus.SAVE_DATA_ERROR);
+//        }
+//    }
 }

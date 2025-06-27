@@ -57,24 +57,6 @@ public class DiaryController {
         return ResponseEntity.ok(diaryService.getAllDiaryList(user.getId(), diaryId, isPublic));
     }
 
-    @PostMapping(value = "/content/{diaryListId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "다이어리 새로 생성 API", description = "diaryListId, 내용 입력 시 새로운 다이어리로 작성 완료")
-    public ResponseEntity<?> createDiaryContent(
-            Authentication authentication,
-            @PathVariable Long diaryListId,
-            @RequestPart(required = false) DiaryContentRequest.ContentDTO dto,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-
-        String email = (String) authentication.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
-
-        // 3. 내용 작성
-        DiaryContent result = diaryService.createDiaryContent(dto, diaryListId, user.getId(), image);
-        return ResponseEntity.ok(result);
-    }
-
     @PutMapping(value = "/content/{diaryListId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "기존 다이어리 내용 작성 API", description = "diaryListId를 입력, 내용, tag 입력 시 기존 다이어리의 내용 수정 완료")
     public ResponseEntity<?> editDiaryContent(
@@ -83,7 +65,8 @@ public class DiaryController {
             @RequestParam(required = false) String tag,
             @RequestParam(required = true) Boolean isPublic,
             @RequestPart(required = false) DiaryContentRequest.ContentDTO dto,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
+            @RequestPart(value = "image", required = false) List<MultipartFile> images,
+            @RequestParam(value = "deleteImage", required = false) List<String> deletedImages) {
 
         String email = (String) authentication.getName();
 
@@ -91,7 +74,7 @@ public class DiaryController {
                 .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
 
         // 3. 내용 작성
-        DiaryContent result = diaryService.editDiaryContent(dto, diaryListId, user.getId(), image, tag, isPublic);
+        DiaryContent result = diaryService.editDiaryContent(dto, diaryListId, user.getId(), images, tag, isPublic, deletedImages);
         return ResponseEntity.ok(result);
     }
 
@@ -127,4 +110,21 @@ public class DiaryController {
         return ResponseEntity.ok(result);
     }
 
+//    @PostMapping(value = "/content/{diaryListId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @Operation(summary = "다이어리 새로 생성 API", description = "diaryListId, 내용 입력 시 새로운 다이어리로 작성 완료")
+//    public ResponseEntity<?> createDiaryContent(
+//            Authentication authentication,
+//            @PathVariable Long diaryListId,
+//            @RequestPart(required = false) DiaryContentRequest.ContentDTO dto,
+//            @RequestPart(value = "image", required = false) MultipartFile image) {
+//
+//        String email = (String) authentication.getName();
+//
+//        User user = userRepository.findByEmail(email)
+//                .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+//
+//        // 3. 내용 작성
+//        DiaryContent result = diaryService.createDiaryContent(dto, diaryListId, user.getId(), image);
+//        return ResponseEntity.ok(result);
+//    }
 }
