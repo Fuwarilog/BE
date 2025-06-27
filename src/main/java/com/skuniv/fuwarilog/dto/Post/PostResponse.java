@@ -1,6 +1,6 @@
 package com.skuniv.fuwarilog.dto.Post;
 
-import com.skuniv.fuwarilog.domain.Post;
+import com.skuniv.fuwarilog.dto.DiaryContent.DiaryContentResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class PostResponse {
     @Getter
@@ -52,6 +53,8 @@ public class PostResponse {
         private Long diaryListId;
         @Schema(description = "다이어리 내용" , example = "1일차 일본여행에서 ....")
         private String content;
+        @Schema(description = "다이어리 사진" , example = "[이미지url]")
+        private List<String> images;
         @Schema(description = "게시글 날짜" , example = "2025-06-01")
         private LocalDate date;
         @Schema(description = "좋아요 개수" , example = "1")

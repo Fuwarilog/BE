@@ -92,6 +92,7 @@ public class PostService {
                 .title(post.getDiaryList().getDiary().getTitle())
                 .diaryListId(post.getDiaryList().getId())
                 .content(content.get().getContent())
+                .images(content.get().getImageUrls())
                 .date(post.getDiaryList().getDate())
                 .likesCount(post.getLikesCount())
                 .likeState(likeState)
