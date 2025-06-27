@@ -15,11 +15,13 @@ public enum ErrorResponseStatus {
     INVALID_SECRET_FILE(2006, "잘못된 SECRET 파일입니다."),
     ALREADY_EXIST_CONTENT(2007, "이미 존재하는 다이어리 내용입니다."),
     ALREADY_EXIST_LOCATION(2008, "이미 북마크된 장소입니다."),
+    INVALID_IMAGE_FORMAT(2009, "잘못된 이미지 형식입니다."),
 
     RESPONSE_ERROR(3000, "값을 불러오는데 실패했습니다."),
     SVAE_DIARY_IMAGE_ERROR(3001, "다이어리 이미지 저장 실패"),
     SAVE_PROFILE_IMAGE_ERROR(3002, "프로필 이미지 저장 실패"),
     SAVE_DATA_ERROR(3003, " 값을 저장하는데 실패했습니다."),
+    SAVE_DIARY_IMAGE_ERROR(3004, "이미지 저장을 실패"),
 
     CREDENTIAL_NOT_FOUND(4000, "Credential 파일을 찾을 수 없습니다."),
     SECRET_FILE_NOT_FOUND(4001, "SECRET 파일을 찾을 수 없습니다."),
