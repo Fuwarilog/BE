@@ -2,16 +2,13 @@ package com.skuniv.fuwarilog.service;
 
 import com.skuniv.fuwarilog.config.exception.BadRequestException;
 import com.skuniv.fuwarilog.config.exception.ErrorResponseStatus;
-import com.skuniv.fuwarilog.domain.PostBookmark;
-import com.skuniv.fuwarilog.domain.PostLike;
-import com.skuniv.fuwarilog.domain.User;
+import com.skuniv.fuwarilog.domain.*;
+import com.skuniv.fuwarilog.dto.DiaryList.DiaryListResponse;
 import com.skuniv.fuwarilog.dto.PostBookmark.PostBookmarkResponse;
 import com.skuniv.fuwarilog.dto.PostLike.PostLikeResponse;
 import com.skuniv.fuwarilog.dto.User.UserRequest;
 import com.skuniv.fuwarilog.dto.User.UserResponse;
-import com.skuniv.fuwarilog.repository.PostBookmarkRepository;
-import com.skuniv.fuwarilog.repository.PostLikeRepository;
-import com.skuniv.fuwarilog.repository.UserRepository;
+import com.skuniv.fuwarilog.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,8 +33,11 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final PostLikeRepository postLikeRepository;
+    private final TripRepository tripRepository;
     private UserRepository userRepository;
     private PostBookmarkRepository postBookmarkRepository;
+    private DiaryRepository diaryRepository;
+    private DiaryListRepository diaryListRepository;
 
     /**
      * @implSpec 사용자 정보 반환
@@ -146,6 +146,40 @@ public class UserService {
                                         .postId(postBookmark.getPost().getId())
                                         .userId(postBookmark.getUser().getId())
                                         .bookmarked(postBookmark.getPost().isBookmarkState())
+                                        .build();
+                            }).collect(Collectors.toList())
+                    ).build();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadRequestException(ErrorResponseStatus.RESPONSE_ERROR);
+        }
+    }
+
+    /**
+     * @implSpec 사용자 게시글 공개 리스트 반환
+     * @param userId 사용자 고유 번호
+     * @return UserResponse.UserPublicDTO 사용자 공개 게시글 리스트 반환
+     */
+    public UserResponse.UserPublicDTO getIsPublicPostByUser(long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BadRequestException(ErrorResponseStatus.USER_NOT_FOUND));
+
+            List<Trip> trips = tripRepository.findAllByUser(user);
+            List<Diary> diaries = diaryRepository.findAllByTripIn(trips);
+            List<DiaryList> diaryLists = diaryListRepository.findAllByDiaryIn(diaries);
+
+            return UserResponse.UserPublicDTO.builder()
+                    .userId(userId)
+                    .diaryLists(diaryLists.stream()
+                            .filter(dl -> dl.getIsPublic() == Boolean.TRUE)
+                            .map(dl -> {
+                                return DiaryListResponse.DiaryListResDTO.builder()
+                                        .id(dl.getId())
+                                        .diaryId(dl.getDiary().getId())
+                                        .title(dl.getDiary().getTitle())
+                                        .date(dl.getDate())
+                                        .isPublic(dl.getIsPublic())
                                         .build();
                             }).collect(Collectors.toList())
                     ).build();
