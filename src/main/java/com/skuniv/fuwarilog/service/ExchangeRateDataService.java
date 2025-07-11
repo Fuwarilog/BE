@@ -38,38 +38,64 @@ public class ExchangeRateDataService {
      * 매일 오전 11시에 환율 값 업데이트
      * 공휴일, 주말에는 은행 업무 휴무이므로 null
      */
-    @Scheduled(cron = "0 0 11 * * *")
+    @Scheduled(cron = "0 0 11 * * *") // 매일 오전 11시(한국수출입 은행 업데이트 시간)
     public void fetchAndSendExchangeRates() {
+        log.info("[1] Start fetchAndSendExchangeRates");
+
+        // 1) 현재 날짜와 어제 날짜 기준 설정
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+
+        // 2) DB에서 저장된 가장 마지막 환율 날짜 조회
+        LocalDate latestSavedDate = exchangeRateRepository.findMaxTimestamp()
+                .orElse(LocalDate.parse("2024-12-30")); // 초기값 설정
+
+        log.info("[2] Last saved date: {}", latestSavedDate);
+
+        // 3) 어제 날짜의 데이터가 저장되어 있지 않은 경우 → 누락 가능성 → 백필링
+        if (latestSavedDate.isBefore(yesterday)) {
+            log.info("[3] Missing data detected. Start backfilling from {} to {}", latestSavedDate.plusDays(1), yesterday);
+
+            for (LocalDate date = latestSavedDate.plusDays(1); !date.isAfter(yesterday); date = date.plusDays(1)) {
+                fetchExchangeRateForDate(date);
+            }
+        } else {
+            // 최신 날짜(오늘 또는 어제)에 대한 데이터 수집 시도
+            log.info("[3] No missing data. Try to fetch today's data: {}", today);
+            fetchExchangeRateForDate(today);
+        }
+    }
+
+    // 스케쥴링과 보존 정책을 함께 사용, 삭제 기준은 보존 정책에 따른다. -> 테이블 파티셔닝도 필요하다고 함
+    // spirng cron은 개발 환경에서만 사용, 배포 환경은 mysql event schedule 계정으로 관리
+    @Scheduled(cron = "0 0 0 * * *")
+    public void cleanUp() {
+        LocalDate cutoff = LocalDate.now().minusMonths(6);
+        exchangeRateRepository.deleteByTimestampBefore(cutoff);
+    }
+
+    public void fetchExchangeRateForDate(LocalDate date) {
         // 환율 실시간 API 연동
         try{
-            log.info("[1] Start fetchAndSendExchangeRates");
+            String formattedDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            String uri = UriComponentsBuilder.fromUriString("https://www.koreaexim.go.kr/site/program/financial/exchangeJSON")
+                    .queryParam("authkey", apiKey)
+                    .queryParam("searchdate", formattedDate)
+                    .queryParam("data", "AP01")
+                    .toUriString();
 
-            LocalDate latestSavedDate = exchangeRateRepository.findMaxTimestamp()
-                    .orElse(LocalDate.parse("2024-12-30"));
+            log.info("[2] Fetching exchange rates from Kafka ...");
+            log.info(uri);
 
-            for (LocalDate date = latestSavedDate.plusDays(1); !date.isAfter(LocalDate.now()); date = date.plusDays(1)) {
-                log.info(date.toString());
+            ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
+            log.info("restTemplate Body: {}", response.getBody());
 
-                String formattedDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
-                String uri = UriComponentsBuilder.fromUriString("https://www.koreaexim.go.kr/site/program/financial/exchangeJSON")
-                        .queryParam("authkey", apiKey)
-                        .queryParam("searchdate", formattedDate)
-                        .queryParam("data", "AP01")
-                        .toUriString();
-
-                log.info("[2] Fetching exchange rates from Kafka ...");
-                log.info(uri);
-
-                ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
-                log.info("restTemplate Body: {}", response.getBody());
-
-                List<String> currency = Arrays.asList("USD", "JPY(100)", "CNH");
-                Map<String, String> CurrencyToCountry = new HashMap<>() {{
-                    put("USD", "미국");
-                    put("JPY", "일본");
-                    put("CNY", "중국");
-                }};
+            List<String> currency = Arrays.asList("USD", "JPY(100)", "CNH");
+            Map<String, String> CurrencyToCountry = new HashMap<>() {{
+                put("USD", "미국");
+                put("JPY", "일본");
+                put("CNY", "중국");
+            }};
 
                 // (1) null이 아닌 경우 데이터 받음
                 if (!Objects.requireNonNull(response.getBody()).isEmpty()) {
@@ -124,7 +150,6 @@ public class ExchangeRateDataService {
                         }
                     }
                 }
-            }
 
         } catch (Exception e) {
                 log.error("OpenAPI 호출 실패", e);
