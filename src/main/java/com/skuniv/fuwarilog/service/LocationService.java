@@ -264,6 +264,11 @@ public class LocationService {
         String originPlaceId = getPlaceId(dto.getOrigin());
         String destinationPlaceId = getPlaceId(dto.getDestination());
 
+        // 1) google map 경로 탐색 조건 설정 url 생성
+        // - mode: transit → 대중교통 기반 경로 요청
+        // - transit_mode: subway|bus → 지하철/버스만 탐색 (도보, 기차 제외)
+        // - departure_time: now → 현재 시각 기준으로 소요 시간 계산
+        // - traffic_model: best_guess → 교통 상황 예측 기반 시간 추정
         String url = UriComponentsBuilder.fromHttpUrl("https://maps.googleapis.com/maps/api/directions/json")
                 .queryParam("origin", "place_id:" + originPlaceId)
                 .queryParam("destination", "place_id:" + destinationPlaceId)
@@ -281,14 +286,14 @@ public class LocationService {
             throw new RuntimeException("Google Directions API 호출 실패: " + response);
         }
 
+        // 2) 경로 중 첫번째 경로 반환 - 가장 추천되는 경로 먼저 조회
         List<Map<String, Object>> routes = (List<Map<String, Object>>) response.get("routes");
-
         Map<String, Object> route = routes.get(0);
         Map<String, Object> leg = ((List<Map<String, Object>>) route.get("legs")).get(0);
 
+        // 3) 거리 및 소요 시간 정보 파싱 - 반환되는 duration은 "도보 + 대중교통" 전체 소요 시간을 의미함.
         String distanceText = ((Map<String, Object>) leg.get("distance")).get("text").toString();
         int distanceValue = (int) ((Map<String, Object>) leg.get("distance")).get("value");
-
         String durationText = ((Map<String, Object>) leg.get("duration")).get("text").toString();
         int durationValue = (int) ((Map<String, Object>) leg.get("duration")).get("value");
 
